@@ -23,7 +23,11 @@ class CounterStore private constructor(context: Context) :
     private val listeners = CopyOnWriteArraySet<Listener>()
 
     /** Parsed bits of the settings JSON the service needs. Cleared on save. */
-    private data class ServiceSettings(val trackedApps: Set<String>, val showOverlay: Boolean)
+    private data class ServiceSettings(
+        val trackedApps: Set<String>,
+        val showOverlay: Boolean,
+        val limits: Limits = Limits(),
+    )
 
     @Volatile
     private var cache: ServiceSettings? = null
@@ -162,13 +166,43 @@ class CounterStore private constructor(context: Context) :
     /** Whether to show the floating counter over the reels viewer. On by default. */
     fun showOverlay(): Boolean = serviceSettings().showOverlay
 
+    /** Daily and per-app limits, and whether blocking is on. */
+    fun limits(): Limits = serviceSettings().limits
+
+    /** Bonus reels unlocked today from the block screen. */
+    fun bonusToday(): Int =
+        readableDatabase.rawQuery("SELECT value FROM settings WHERE key = ?", arrayOf(bonusKey())).use { c ->
+            if (c.moveToFirst()) c.getString(0).toIntOrNull() ?: 0 else 0
+        }
+
+    fun addBonus(reels: Int) {
+        writableDatabase.insertWithOnConflict(
+            "settings",
+            null,
+            ContentValues().apply {
+                put("key", bonusKey())
+                put("value", (bonusToday() + reels).toString())
+            },
+            SQLiteDatabase.CONFLICT_REPLACE,
+        )
+    }
+
+    private fun bonusKey() = "bonus_${today()}"
+
     private fun serviceSettings(): ServiceSettings = cache ?: parse(settingsJson()).also { cache = it }
 
     private fun parse(json: String?): ServiceSettings {
         val obj = json?.let { runCatching { JSONObject(it) }.getOrNull() } ?: return ServiceSettings(ALL_APPS, true)
         val arr = obj.optJSONArray("trackedApps")
         val tracked = if (arr == null) ALL_APPS else (0 until arr.length()).map { arr.getString(it) }.toSet()
-        return ServiceSettings(tracked, obj.optBoolean("showOverlay", true))
+        val perAppObj = obj.optJSONObject("perAppLimits")
+        val perApp = perAppObj?.keys()?.asSequence()?.associateWith { perAppObj.getInt(it) } ?: emptyMap()
+        val limits = Limits(
+            blockingEnabled = obj.optBoolean("blockingEnabled", false),
+            dailyLimit = if (obj.isNull("dailyLimit")) null else obj.optInt("dailyLimit"),
+            perApp = perApp,
+        )
+        return ServiceSettings(tracked, obj.optBoolean("showOverlay", true), limits)
     }
 
     private fun notifyListeners() {

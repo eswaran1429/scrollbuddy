@@ -7,6 +7,7 @@ import 'package:scrollbuddy/core/custom_widgets/blob/soft_blob.dart';
 import 'package:scrollbuddy/core/custom_widgets/custom_text/custom_text.dart';
 import 'package:scrollbuddy/core/themes/app_colors.dart';
 
+import '../../data/counts_controller.dart';
 import '../../data/settings.dart';
 
 /// Animated intro (≈1.8 s), then onboarding or Today.
@@ -30,32 +31,52 @@ class SplashScreen extends StatefulWidget {
 class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
   late final AnimationController _c;
 
-  late final _blob = CurvedAnimation(parent: _c, curve: const Interval(0, 0.35, curve: Curves.easeOutBack));
+  late final _blob = CurvedAnimation(
+    parent: _c,
+    curve: const Interval(0, 0.35, curve: Curves.easeOutBack),
+  );
   late final _catScale = TweenSequence<double>([
     TweenSequenceItem(tween: Tween(begin: 0.85, end: 1.12).chain(CurveTween(curve: Curves.easeOut)), weight: 20),
     TweenSequenceItem(tween: Tween(begin: 1.12, end: 0.96).chain(CurveTween(curve: Curves.easeInOut)), weight: 15),
     TweenSequenceItem(tween: Tween(begin: 0.96, end: 1.0).chain(CurveTween(curve: Curves.easeOut)), weight: 15),
     TweenSequenceItem(tween: ConstantTween(1.0), weight: 50),
   ]).animate(_c);
-  late final _sparks = CurvedAnimation(parent: _c, curve: const Interval(0.3, 0.55, curve: Curves.easeOut));
-  late final _title = CurvedAnimation(parent: _c, curve: const Interval(0.45, 0.7, curve: Curves.easeOutCubic));
-  late final _tagline = CurvedAnimation(parent: _c, curve: const Interval(0.6, 0.82, curve: Curves.easeOut));
-  late final _exit = CurvedAnimation(parent: _c, curve: const Interval(0.9, 1, curve: Curves.easeIn));
+  late final _sparks = CurvedAnimation(
+    parent: _c,
+    curve: const Interval(0.3, 0.55, curve: Curves.easeOut),
+  );
+  late final _title = CurvedAnimation(
+    parent: _c,
+    curve: const Interval(0.45, 0.7, curve: Curves.easeOutCubic),
+  );
+  late final _tagline = CurvedAnimation(
+    parent: _c,
+    curve: const Interval(0.6, 0.82, curve: Curves.easeOut),
+  );
+  late final _exit = CurvedAnimation(
+    parent: _c,
+    curve: const Interval(0.9, 1, curve: Curves.easeIn),
+  );
 
   @override
   void initState() {
     super.initState();
     final reduced = Get.find<SettingsController>().settings.value.reducedMotion;
     // Reduced motion: no pop or wobble, just a short pause on the finished frame.
-    _c = AnimationController(vsync: this, duration: reduced ? const Duration(milliseconds: 500) : SplashScreen.duration);
+    _c = AnimationController(
+      vsync: this,
+      duration: reduced ? const Duration(milliseconds: 500) : SplashScreen.duration,
+    );
     if (reduced) _c.value = 0.85;
     _c.forward().whenComplete(_done);
   }
 
-  void _done() {
+  Future<void> _done() async {
+    // Opened by the service at a reel limit: go straight to the block screen.
+    final block = await Get.find<CountsController>().bridge.takeBlockRequest();
     if (!mounted) return;
     final onboarded = Get.find<SettingsController>().settings.value.onboardingDone;
-    context.go(onboarded ? '/' : '/onboarding');
+    context.go(!onboarded ? '/onboarding' : (block ? '/block' : '/'));
   }
 
   @override

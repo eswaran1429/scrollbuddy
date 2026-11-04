@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:scrollbuddy/core/custom_widgets/custom_text/custom_text.dart';
+import 'package:scrollbuddy/core/custom_widgets/page_header/page_header.dart';
 import 'package:scrollbuddy/core/themes/app_colors.dart';
 import 'package:scrollbuddy/core/themes/app_tokens.dart';
 
@@ -31,18 +32,18 @@ class AppTile extends StatelessWidget {
       child: Opacity(
         opacity: enabled ? 1 : 0.45,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
             children: [
-              if (leading != null) ...[leading!, const SizedBox(width: 14)],
+              if (leading != null) ...[leading!, const SizedBox(width: 12)],
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    CustomText(text: title, fontWeight: FontWeight.w500, fontSize: 15, color: titleColor),
+                    CustomText(text: title, fontWeight: FontWeight.w500, fontSize: 14, color: titleColor),
                     if (subtitle != null) ...[
                       const SizedBox(height: 2),
-                      CustomText(text: subtitle!, fontSize: 13, color: AppColors.textMuted),
+                      CustomText(text: subtitle!, fontSize: 12, color: AppColors.textMuted),
                     ],
                   ],
                 ),
@@ -68,21 +69,17 @@ class AppTileGroup extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (title != null)
-          Padding(
-            padding: const EdgeInsets.only(left: 6, bottom: 10),
-            child: CustomText(text: title!, fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textMuted),
-          ),
+        if (title != null) Padding(padding: const EdgeInsets.only(left: 4, bottom: 8), child: SectionLabel(title!)),
         Container(
-          decoration: BoxDecoration(borderRadius: BorderRadius.circular(24), boxShadow: AppShadows.sm),
+          decoration: BoxDecoration(borderRadius: BorderRadius.circular(22), boxShadow: AppShadows.sm),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(22),
             child: Material(
               color: AppColors.surface,
               child: Column(
                 children: [
                   for (final (i, c) in children.indexed) ...[
-                    if (i > 0) const Divider(height: 1, indent: 18, endIndent: 18),
+                    if (i > 0) const Divider(height: 1, indent: 16, endIndent: 16),
                     c,
                   ],
                 ],
@@ -95,7 +92,7 @@ class AppTileGroup extends StatelessWidget {
   }
 }
 
-/// Soft tinted circle with an icon.
+/// Soft tinted rounded square with an icon.
 class IconBadge extends StatelessWidget {
   const IconBadge({super.key, required this.icon, required this.color, this.size = 36});
 
@@ -108,8 +105,32 @@ class IconBadge extends StatelessWidget {
     return Container(
       width: size,
       height: size,
-      decoration: BoxDecoration(color: color.withValues(alpha: 0.13), shape: BoxShape.circle),
-      child: Icon(icon, color: color, size: size * 0.52),
+      decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(size * 0.3)),
+      child: Icon(icon, color: color, size: size * 0.5),
+    );
+  }
+}
+
+/// Label on the left, value on the right. Used in key/value cards.
+class InfoRow extends StatelessWidget {
+  const InfoRow({super.key, required this.label, required this.value, this.valueColor});
+
+  final String label;
+  final String value;
+  final Color? valueColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        children: [
+          Expanded(
+            child: CustomText(text: label, fontSize: 13, color: AppColors.textMuted),
+          ),
+          CustomText(text: value, fontSize: 13, fontWeight: FontWeight.w600, color: valueColor),
+        ],
+      ),
     );
   }
 }

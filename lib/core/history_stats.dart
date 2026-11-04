@@ -18,9 +18,7 @@ HistoryStats computeStats(List<DayCounts> pastDays, DayCounts today, {int? limit
   for (final d in pastDays) {
     if (best == null || d.total < best.total) best = d;
   }
-  final average = pastDays.isEmpty
-      ? 0
-      : (pastDays.fold(0, (a, d) => a + d.total) / pastDays.length).round();
+  final average = pastDays.isEmpty ? 0 : (pastDays.fold(0, (a, d) => a + d.total) / pastDays.length).round();
 
   var streak = 0;
   if (limit != null) {

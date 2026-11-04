@@ -1,6 +1,7 @@
 package com.example.scrollbuddy.service
 
 import android.accessibilityservice.AccessibilityService
+import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.os.Build
 import android.os.Handler
@@ -9,6 +10,7 @@ import android.os.SystemClock
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
+import com.example.scrollbuddy.MainActivity
 import com.example.scrollbuddy.detect.AppSelectors
 import com.example.scrollbuddy.detect.EventSnapshot
 import com.example.scrollbuddy.detect.ReelDetector
@@ -32,13 +34,26 @@ class ReelAccessibilityService : AccessibilityService() {
     private val main = Handler(Looper.getMainLooper())
 
     // Events only arrive from the four apps, so leaving them (home, other app) sends nothing.
-    // While the bubble is visible, poll the active window once a second to hide it.
+    // While the bubble is visible, poll the active window once a second: hide it when another
+    // app is in front, the window is gone twice in a row, or the reels viewer is no longer on screen.
+    private var missedWindows = 0
     private val leaveCheck = object : Runnable {
         override fun run() {
             if (!bubble.isShown) return
-            val pkg = rootInActiveWindow?.let { root -> root.packageName?.toString().also { release(root) } }
-            if (pkg != null && pkg != currentPackage) {
-                currentPackage = null
+            val root = rootInActiveWindow
+            val pkg = root?.packageName?.toString()
+            val app = if (pkg != null && pkg == currentPackage) Selectors.byPackage[pkg] else null
+            missedWindows = if (root == null) missedWindows + 1 else 0
+            val stillInViewer = when {
+                root == null -> missedWindows < 2
+                app == null -> {
+                    release(root)
+                    false
+                }
+                else -> isReelsViewer(root, app) // releases root
+            }
+            if (!stillInViewer) {
+                if (pkg != currentPackage) currentPackage = null
                 inViewer = false
                 bubble.hide()
             } else {
@@ -83,6 +98,7 @@ class ReelAccessibilityService : AccessibilityService() {
             if (debugLog && was != inViewer) Log.d(TAG, "${app.key} inViewer=$inViewer")
             lastViewerCheck = now
             updateBubble()
+            if (inViewer) maybeBlock(app.key, now)
         }
 
         if (app.probePagerIndex) {
@@ -111,6 +127,7 @@ class ReelAccessibilityService : AccessibilityService() {
         if (detectors.getOrPut(app.key) { ReelDetector(app) }.onEvent(snapshot)) {
             store.increment(app.key)
             bubble.update(store.todayTotal())
+            maybeBlock(app.key, now)
         }
     }
 
@@ -142,6 +159,7 @@ class ReelAccessibilityService : AccessibilityService() {
         if (detector.onEvent(snapshot)) {
             store.increment(app.key)
             bubble.update(store.todayTotal())
+            maybeBlock(app.key, now)
         }
     }
 
@@ -169,6 +187,29 @@ class ReelAccessibilityService : AccessibilityService() {
             if (result >= 0) break
         }
         return result
+    }
+
+    private var lastBlock = 0L
+
+    /**
+     * When the limit is reached inside the reels viewer: press Back to leave reels (feed and
+     * messages keep working) and open ScrollBuddy's block screen. At most once every few seconds.
+     */
+    private fun maybeBlock(appKey: String, now: Long) {
+        if (now - lastBlock < BLOCK_COOLDOWN_MS) return
+        if (!store.limits().reached(store.todayCounts(), appKey, store.bonusToday())) return
+        lastBlock = now
+        if (debugLog) Log.d(TAG, "$appKey limit reached, blocking")
+        inViewer = false
+        bubble.hide()
+        performGlobalAction(GLOBAL_ACTION_BACK)
+        main.postDelayed({
+            startActivity(
+                Intent(this, MainActivity::class.java)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                    .putExtra(MainActivity.EXTRA_BLOCK, true),
+            )
+        }, 250)
     }
 
     private fun updateBubble() {
@@ -201,8 +242,9 @@ class ReelAccessibilityService : AccessibilityService() {
                 val id = node.viewIdResourceName
                 if (debugLog && id != null) seenIds.add(id.substringAfter(":id/"))
                 val desc = node.contentDescription?.toString()
-                found = (id != null && app.viewerIds.any { id.contains(it) }) ||
+                val matches = (id != null && app.viewerIds.any { id.contains(it) }) ||
                     (desc != null && app.viewerDescriptions.any { desc.contains(it, ignoreCase = true) })
+                found = matches && fillsScreen(node)
                 if (!found) {
                     for (i in 0 until node.childCount) node.getChild(i)?.let(queue::add)
                 }
@@ -216,6 +258,14 @@ class ReelAccessibilityService : AccessibilityService() {
 
     private val seenIds = linkedSetOf<String>()
 
+    private val viewerBounds = android.graphics.Rect()
+
+    /** Full-screen viewer, not a small preview in a feed or shelf. */
+    private fun fillsScreen(node: AccessibilityNodeInfo): Boolean {
+        node.getBoundsInScreen(viewerBounds)
+        return viewerBounds.height() >= resources.displayMetrics.heightPixels * MIN_VIEWER_HEIGHT
+    }
+
     @Suppress("DEPRECATION")
     private fun release(node: AccessibilityNodeInfo) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) node.recycle()
@@ -226,6 +276,8 @@ class ReelAccessibilityService : AccessibilityService() {
         const val MAX_NODES = 400
         const val LEAVE_CHECK_MS = 1000L
         const val PROBE_MS = 250L
+        const val BLOCK_COOLDOWN_MS = 3000L
+        const val MIN_VIEWER_HEIGHT = 0.6f
         const val TAG = "ScrollBuddy"
     }
 }

@@ -13,11 +13,11 @@ import '../features/splash/splash_screen.dart';
 
 /// Fades a page in; used for the screens the splash hands over to.
 CustomTransitionPage<void> _fade(GoRouterState state, Widget child) => CustomTransitionPage<void>(
-      key: state.pageKey,
-      child: child,
-      transitionDuration: const Duration(milliseconds: 350),
-      transitionsBuilder: (context, animation, _, child) => FadeTransition(opacity: animation, child: child),
-    );
+  key: state.pageKey,
+  child: child,
+  transitionDuration: const Duration(milliseconds: 350),
+  transitionsBuilder: (context, animation, _, child) => FadeTransition(opacity: animation, child: child),
+);
 
 /// The splash decides whether to continue to onboarding or Today.
 GoRouter createRouter() {
@@ -27,13 +27,12 @@ GoRouter createRouter() {
       GoRoute(path: '/splash', builder: (context, state) => const SplashScreen()),
       GoRoute(
         path: '/onboarding',
-        pageBuilder: (context, state) => _fade(
-          state,
-          OnboardingScreen(startPage: int.tryParse(state.uri.queryParameters['step'] ?? '') ?? 0),
-        ),
+        pageBuilder: (context, state) =>
+            _fade(state, OnboardingScreen(startPage: int.tryParse(state.uri.queryParameters['step'] ?? '') ?? 0)),
       ),
       GoRoute(path: '/limits', builder: (context, state) => const LimitsScreen()),
-      GoRoute(path: '/block-preview', builder: (context, state) => const BlockScreen()),
+      GoRoute(path: '/block', builder: (context, state) => const BlockScreen()),
+      GoRoute(path: '/block-preview', builder: (context, state) => const BlockScreen(preview: true)),
       StatefulShellRoute.indexedStack(
         pageBuilder: (context, state, shell) => _fade(state, _HomeShell(shell: shell)),
         branches: [
@@ -61,7 +60,7 @@ class _HomeShell extends StatelessWidget {
   final StatefulNavigationShell shell;
 
   static const _tabs = [
-    (AppNavItem(icon: Icons.today_outlined, activeIcon: Icons.today, label: 'Today'), 0),
+    (AppNavItem(icon: Icons.today_outlined, activeIcon: Icons.today, label: 'Home'), 0),
     (AppNavItem(icon: Icons.bar_chart_outlined, activeIcon: Icons.bar_chart, label: 'History'), 1),
     (AppNavItem(icon: Icons.settings_outlined, activeIcon: Icons.settings, label: 'Settings'), 3),
   ];

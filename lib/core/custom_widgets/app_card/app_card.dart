@@ -8,11 +8,11 @@ class AppCard extends StatelessWidget {
   const AppCard({
     super.key,
     required this.child,
-    this.padding = const EdgeInsets.all(20),
+    this.padding = const EdgeInsets.all(18),
     this.color,
     this.border,
     this.onTap,
-    this.radius = 28,
+    this.radius = 22,
   });
 
   final Widget child;
@@ -26,17 +26,18 @@ class AppCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final r = BorderRadius.circular(radius);
     return Container(
-      decoration: BoxDecoration(
-        borderRadius: r,
-        boxShadow: color == null ? AppShadows.sm : null,
-      ),
+      decoration: BoxDecoration(borderRadius: r, boxShadow: color == null ? AppShadows.sm : null),
       child: Material(
         color: color ?? AppColors.surface,
         borderRadius: r,
         clipBehavior: Clip.antiAlias,
         child: Ink(
           decoration: BoxDecoration(borderRadius: r, border: border),
-          child: InkWell(onTap: onTap, borderRadius: r, child: Padding(padding: padding, child: child)),
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: r,
+            child: Padding(padding: padding, child: child),
+          ),
         ),
       ),
     );

@@ -54,30 +54,29 @@ class AppSettings {
     bool? reducedMotion,
     bool? onboardingDone,
     bool? showOverlay,
-  }) =>
-      AppSettings(
-        dailyLimit: dailyLimit != null ? dailyLimit() : this.dailyLimit,
-        perAppLimits: perAppLimits ?? this.perAppLimits,
-        blockingEnabled: blockingEnabled ?? this.blockingEnabled,
-        unlockMode: unlockMode ?? this.unlockMode,
-        strictUntil: strictUntil != null ? strictUntil() : this.strictUntil,
-        trackedApps: trackedApps ?? this.trackedApps,
-        reducedMotion: reducedMotion ?? this.reducedMotion,
-        onboardingDone: onboardingDone ?? this.onboardingDone,
-        showOverlay: showOverlay ?? this.showOverlay,
-      );
+  }) => AppSettings(
+    dailyLimit: dailyLimit != null ? dailyLimit() : this.dailyLimit,
+    perAppLimits: perAppLimits ?? this.perAppLimits,
+    blockingEnabled: blockingEnabled ?? this.blockingEnabled,
+    unlockMode: unlockMode ?? this.unlockMode,
+    strictUntil: strictUntil != null ? strictUntil() : this.strictUntil,
+    trackedApps: trackedApps ?? this.trackedApps,
+    reducedMotion: reducedMotion ?? this.reducedMotion,
+    onboardingDone: onboardingDone ?? this.onboardingDone,
+    showOverlay: showOverlay ?? this.showOverlay,
+  );
 
   Map<String, dynamic> toJson() => {
-        'dailyLimit': dailyLimit,
-        'perAppLimits': {for (final e in perAppLimits.entries) e.key.name: e.value},
-        'blockingEnabled': blockingEnabled,
-        'unlockMode': unlockMode.name,
-        'strictUntil': strictUntil?.millisecondsSinceEpoch,
-        'trackedApps': [for (final a in trackedApps) a.name],
-        'reducedMotion': reducedMotion,
-        'onboardingDone': onboardingDone,
-        'showOverlay': showOverlay,
-      };
+    'dailyLimit': dailyLimit,
+    'perAppLimits': {for (final e in perAppLimits.entries) e.key.name: e.value},
+    'blockingEnabled': blockingEnabled,
+    'unlockMode': unlockMode.name,
+    'strictUntil': strictUntil?.millisecondsSinceEpoch,
+    'trackedApps': [for (final a in trackedApps) a.name],
+    'reducedMotion': reducedMotion,
+    'onboardingDone': onboardingDone,
+    'showOverlay': showOverlay,
+  };
 
   /// Missing or unknown values fall back to defaults.
   factory AppSettings.fromJson(Map<String, dynamic> j) {
@@ -87,8 +86,7 @@ class AppSettings {
     return AppSettings(
       dailyLimit: j['dailyLimit'] as int?,
       perAppLimits: {
-        for (final e in (j['perAppLimits'] as Map? ?? const {}).entries)
-          ?app(e.key as String): e.value as int,
+        for (final e in (j['perAppLimits'] as Map? ?? const {}).entries) ?app(e.key as String): e.value as int,
       },
       blockingEnabled: j['blockingEnabled'] as bool? ?? false,
       unlockMode: UnlockMode.values.asNameMap()[j['unlockMode']] ?? UnlockMode.wait,
@@ -123,10 +121,8 @@ class SettingsController extends GetxController {
 
   void markOnboardingDone() => _s = _s.copyWith(onboardingDone: true);
 
-  void setDailyLimit(int? limit) => _s = _s.copyWith(
-        dailyLimit: () => limit,
-        blockingEnabled: limit == null ? false : null,
-      );
+  void setDailyLimit(int? limit) =>
+      _s = _s.copyWith(dailyLimit: () => limit, blockingEnabled: limit == null ? false : null);
 
   void setPerAppLimit(TrackedApp app, int? limit) {
     final next = {..._s.perAppLimits};
@@ -140,9 +136,8 @@ class SettingsController extends GetxController {
 
   void startStrict(DateTime until) => _s = _s.copyWith(strictUntil: () => until);
 
-  void setTracked(TrackedApp app, bool on) => _s = _s.copyWith(
-        trackedApps: on ? {..._s.trackedApps, app} : ({..._s.trackedApps}..remove(app)),
-      );
+  void setTracked(TrackedApp app, bool on) =>
+      _s = _s.copyWith(trackedApps: on ? {..._s.trackedApps, app} : ({..._s.trackedApps}..remove(app)));
 
   void setReducedMotion(bool on) => _s = _s.copyWith(reducedMotion: on);
 

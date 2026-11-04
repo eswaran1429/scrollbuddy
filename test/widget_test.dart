@@ -76,10 +76,7 @@ void main() {
     await tester.tap(find.text('Continue without tracking'));
     await settle(tester);
 
-    for (final (tab, expected) in [
-      ('History', '7 days'),
-      ('Settings', 'Tracking is off'),
-    ]) {
+    for (final (tab, expected) in [('History', '7 days'), ('Settings', 'Tracking is off')]) {
       await tester.tap(find.descendant(of: find.byType(AppBottomNav), matching: find.text(tab)));
       await settle(tester);
       expect(find.text(expected), findsOneWidget, reason: tab);
@@ -114,6 +111,8 @@ void main() {
     expect(tester.widget<Switch>(blocking).value, isTrue);
 
     await tester.scrollUntilVisible(find.text('Strict'), 200);
+    await tester.ensureVisible(find.text('Strict'));
+    await settle(tester);
     await tester.tap(find.text('Strict'));
     await settle(tester);
     await tester.scrollUntilVisible(find.text('Start strict mode'), 200);
@@ -144,10 +143,10 @@ void main() {
     await tester.tap(find.text('30 days'));
     await settle(tester);
     expect(find.text('History'), findsWidgets);
-    expect(find.text('Reels per day'), findsOneWidget);
+    expect(find.text('REELS PER DAY'), findsOneWidget);
   });
 
-  testWidgets('dashboard app cards fit on a narrow 360dp phone', (tester) async {
+  testWidgets('dashboard fits on a narrow 360dp phone', (tester) async {
     tester.view.physicalSize = const Size(360 * 3, 640 * 3);
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
@@ -161,7 +160,7 @@ void main() {
     await tester.tap(find.text('Continue without tracking'));
     await settle(tester);
 
-    await tester.scrollUntilVisible(find.text('Your apps'), 200);
+    await tester.scrollUntilVisible(find.textContaining('not a diagnosis'), 200);
     await tester.drag(find.byType(ListView).first, const Offset(0, -300));
     await settle(tester);
     expect(tester.takeException(), isNull);

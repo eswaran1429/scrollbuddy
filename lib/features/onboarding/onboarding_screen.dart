@@ -260,8 +260,10 @@ class _IntroPage extends StatelessWidget {
       title: 'Every reel,',
       accent: 'counted.',
       content: const [
-        _Muted('ScrollBuddy counts the reels and shorts you watch, live, all day. Watch your brain buddy '
-            'change as the number climbs, and set a limit that works for you.'),
+        _Muted(
+          'ScrollBuddy counts the reels and shorts you watch, live, all day. Watch your brain buddy '
+          'change as the number climbs, and set a limit that works for you.',
+        ),
       ],
       actions: [AppButton(label: 'Get started', onPressed: onNext)],
     );
@@ -288,7 +290,9 @@ class _Bullets extends StatelessWidget {
                     size: 28,
                   ),
                   const SizedBox(width: 12),
-                  Expanded(child: CustomText(text: text, fontWeight: FontWeight.w500)),
+                  Expanded(
+                    child: CustomText(text: text, fontWeight: FontWeight.w500),
+                  ),
                 ],
               ),
             ),
@@ -455,7 +459,8 @@ class _AccessibilityPage extends StatelessWidget {
               CustomText(text: 'Why this permission?', fontSize: 20, fontWeight: FontWeight.w700),
               SizedBox(height: 8),
               CustomText(
-                text: 'Android only lets apps notice reel swipes in other apps through Accessibility. '
+                text:
+                    'Android only lets apps notice reel swipes in other apps through Accessibility. '
                     'ScrollBuddy uses it for counting and, if you choose, blocking.',
                 color: AppColors.textMuted,
                 height: 1.5,
@@ -481,9 +486,11 @@ class _AccessibilityPage extends StatelessWidget {
         ),
         title: enabled ? 'Tracking is on' : 'Turn on tracking',
         content: [
-          _Muted(enabled
-              ? 'All set. ScrollBuddy will now count reels in the apps you picked.'
-              : 'One permission and you are ready to go.'),
+          _Muted(
+            enabled
+                ? 'All set. ScrollBuddy will now count reels in the apps you picked.'
+                : 'One permission and you are ready to go.',
+          ),
           const SizedBox(height: 24),
           AppCard(
             padding: const EdgeInsets.fromLTRB(18, 16, 14, 16),
@@ -533,7 +540,9 @@ class _AccessibilityPage extends StatelessWidget {
               children: [
                 Icon(Icons.verified_user_outlined, color: AppColors.sage),
                 SizedBox(width: 12),
-                Expanded(child: CustomText(text: 'Why does ScrollBuddy need this?', fontWeight: FontWeight.w600)),
+                Expanded(
+                  child: CustomText(text: 'Why does ScrollBuddy need this?', fontWeight: FontWeight.w600),
+                ),
                 Icon(Icons.chevron_right, color: AppColors.textMuted),
               ],
             ),
@@ -617,10 +626,7 @@ class _Step extends StatelessWidget {
             width: 26,
             height: 26,
             alignment: Alignment.center,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: AppColors.sage.withValues(alpha: 0.16),
-            ),
+            decoration: BoxDecoration(shape: BoxShape.circle, color: AppColors.sage.withValues(alpha: 0.16)),
             child: CustomText(text: '$n', fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.sage),
           ),
           const SizedBox(width: 12),

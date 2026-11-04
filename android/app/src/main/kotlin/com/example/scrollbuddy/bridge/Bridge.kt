@@ -6,6 +6,7 @@ import android.content.Intent
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
+import com.example.scrollbuddy.MainActivity
 import com.example.scrollbuddy.service.ReelAccessibilityService
 import com.example.scrollbuddy.store.CounterStore
 import io.flutter.plugin.common.BinaryMessenger
@@ -50,6 +51,14 @@ class Bridge(private val activity: Activity, messenger: BinaryMessenger) {
                     store.resetToday()
                     result.success(null)
                 }
+                "takeBlockRequest" -> {
+                    result.success(MainActivity.blockRequested)
+                    MainActivity.blockRequested = false
+                }
+                "grantBonus" -> {
+                    store.addBonus(call.argument<Int>("reels") ?: 0)
+                    result.success(null)
+                }
                 "deleteAll" -> {
                     store.deleteAll()
                     result.success(null)
@@ -75,6 +84,11 @@ class Bridge(private val activity: Activity, messenger: BinaryMessenger) {
                 listener = null
             }
         })
+    }
+
+    /** Asks Flutter to open the block screen (app already running). */
+    fun notifyBlock() {
+        main.post { control.invokeMethod("blockRequested", null) }
     }
 
     private fun isServiceEnabled(): Boolean {

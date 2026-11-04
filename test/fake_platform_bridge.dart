@@ -28,7 +28,11 @@ class FakePlatformBridge implements PlatformBridge {
     if (history != null) return history!;
     final today = dateOnly(DateTime.now());
     return [
-      for (var i = days; i >= 1; i--) DayCounts(date: today.subtract(Duration(days: i)), perApp: const {}),
+      for (var i = days; i >= 1; i--)
+        DayCounts(
+          date: today.subtract(Duration(days: i)),
+          perApp: const {},
+        ),
     ];
   }
 
@@ -62,4 +66,29 @@ class FakePlatformBridge implements PlatformBridge {
     _settings = null;
     await resetToday();
   }
+
+  /// Set to simulate the service opening the app at the limit.
+  bool blockRequested = false;
+  int bonus = 0;
+
+  @override
+  Future<bool> takeBlockRequest() async {
+    final r = blockRequested;
+    blockRequested = false;
+    return r;
+  }
+
+  @override
+  void setBlockRequestHandler(void Function() handler) => _blockHandler = handler;
+
+  void Function()? _blockHandler;
+
+  /// Simulates the service opening the running app at the limit.
+  void requestBlock() {
+    blockRequested = true;
+    _blockHandler?.call();
+  }
+
+  @override
+  Future<void> grantBonus(int reels) async => bonus += reels;
 }

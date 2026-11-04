@@ -5,6 +5,7 @@ import 'package:scrollbuddy/core/custom_widgets/app_button/app_button.dart';
 import 'package:scrollbuddy/core/custom_widgets/app_card/app_card.dart';
 import 'package:scrollbuddy/core/custom_widgets/app_tile/app_tile.dart';
 import 'package:scrollbuddy/core/custom_widgets/custom_text/custom_text.dart';
+import 'package:scrollbuddy/core/custom_widgets/page_header/page_header.dart';
 import 'package:scrollbuddy/core/themes/app_colors.dart';
 
 import '../../core/models.dart';
@@ -24,43 +25,51 @@ class SettingsScreen extends StatelessWidget {
     final n = Get.find<SettingsController>();
     final trackingOn = Get.find<CountsController>().accessibilityEnabled.value;
 
-    void snack(String msg) =>
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: CustomText(text: msg)));
+    void snack(String msg) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: CustomText(text: msg)));
 
     return Scaffold(
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 120),
           children: [
-            const CustomText(text: 'Settings', fontSize: 30, fontWeight: FontWeight.w700, letterSpacing: -0.5),
-            const SizedBox(height: 20),
+            const PageHeader(title: 'Settings', subtitle: 'Tracking, limits and your data'),
+            const SizedBox(height: 18),
             AppCard(
-              color: (trackingOn ? AppColors.sage : AppColors.coral).withValues(alpha: 0.1),
-              border: Border.all(color: (trackingOn ? AppColors.sage : AppColors.coral).withValues(alpha: 0.35)),
-              radius: 24,
-              padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
+              padding: const EdgeInsets.fromLTRB(14, 14, 12, 14),
               child: Row(
                 children: [
                   IconBadge(
-                    icon: trackingOn ? Icons.check_circle : Icons.error_outline,
+                    icon: trackingOn ? Icons.verified_outlined : Icons.error_outline,
                     color: trackingOn ? AppColors.sage : AppColors.coral,
-                    size: 40,
+                    size: 44,
                   ),
-                  const SizedBox(width: 14),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        CustomText(text: trackingOn ? 'Tracking is on' : 'Tracking is off', fontWeight: FontWeight.w700),
+                        const SectionLabel('Tracking'),
+                        CustomText(
+                          text: trackingOn ? 'Tracking is on' : 'Tracking is off',
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                        ),
                         CustomText(
                           text: trackingOn ? 'Counting reels in your apps' : 'Turn on Accessibility access',
-                          fontSize: 13,
+                          fontSize: 11,
                           color: AppColors.textMuted,
                         ),
                       ],
                     ),
                   ),
-                  if (!trackingOn)
+                  if (trackingOn)
+                    const StatusPill(
+                      text: 'Active',
+                      icon: Icons.check_circle,
+                      color: AppColors.sage,
+                      background: AppColors.sageSoft,
+                    )
+                  else
                     AppButton(
                       label: 'Fix',
                       compact: true,
@@ -70,7 +79,7 @@ class SettingsScreen extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 22),
             AppTileGroup(
               title: 'Tracked apps',
               children: [
@@ -82,7 +91,7 @@ class SettingsScreen extends StatelessWidget {
                   ),
               ],
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 22),
             AppTileGroup(
               title: 'Limits',
               children: [
@@ -95,7 +104,7 @@ class SettingsScreen extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 22),
             AppTileGroup(
               title: 'Display',
               children: [
@@ -112,7 +121,7 @@ class SettingsScreen extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 22),
             AppTileGroup(
               title: 'Your data',
               children: [
@@ -135,8 +144,11 @@ class SettingsScreen extends StatelessWidget {
                   title: 'Delete all data',
                   titleColor: AppColors.coral,
                   onTap: () async {
-                    if (await _confirm(context, 'Delete all data?',
-                        'This removes all counts and settings from this device. It cannot be undone.')) {
+                    if (await _confirm(
+                      context,
+                      'Delete all data?',
+                      'This removes all counts and settings from this device. It cannot be undone.',
+                    )) {
                       await Get.find<CountsController>().deleteAll();
                       n.reset();
                     }
@@ -144,7 +156,7 @@ class SettingsScreen extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 22),
             AppTileGroup(
               title: 'About',
               children: [
@@ -188,7 +200,10 @@ class SettingsScreen extends StatelessWidget {
         title: CustomText(text: title, fontWeight: FontWeight.w700, fontSize: 18),
         content: CustomText(text: body, color: AppColors.textMuted),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const CustomText(text: 'Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const CustomText(text: 'Cancel'),
+          ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
             child: const CustomText(text: 'Confirm', fontWeight: FontWeight.w700),

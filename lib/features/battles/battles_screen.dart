@@ -21,9 +21,9 @@ class _Entry {
 
 /// Active players by count ascending, then inactive ones (they cannot win, D-14).
 List<_Entry> _rank(List<_Entry> entries) => [
-      ...entries.where((e) => e.active).toList()..sort((a, b) => a.count.compareTo(b.count)),
-      ...entries.where((e) => !e.active),
-    ];
+  ...entries.where((e) => e.active).toList()..sort((a, b) => a.count.compareTo(b.count)),
+  ...entries.where((e) => !e.active),
+];
 
 const _avatarColors = [AppColors.teal, AppColors.purple, AppColors.orange, AppColors.blue500, AppColors.successGreen];
 
@@ -94,8 +94,9 @@ class BattlesScreen extends StatelessWidget {
                     expand: false,
                     onPressed: () {
                       Clipboard.setData(const ClipboardData(text: myFriendCode));
-                      ScaffoldMessenger.of(context)
-                          .showSnackBar(const SnackBar(content: CustomText(text: 'Friend code copied')));
+                      ScaffoldMessenger.of(
+                        context,
+                      ).showSnackBar(const SnackBar(content: CustomText(text: 'Friend code copied')));
                     },
                   ),
                 ],
@@ -154,7 +155,9 @@ class BattlesScreen extends StatelessWidget {
                           children: [
                             _Avatar(name: f.name),
                             const SizedBox(width: 12),
-                            Expanded(child: CustomText(text: f.name, fontWeight: FontWeight.w600)),
+                            Expanded(
+                              child: CustomText(text: f.name, fontWeight: FontWeight.w600),
+                            ),
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                               decoration: BoxDecoration(
@@ -197,7 +200,10 @@ class BattlesScreen extends StatelessWidget {
           maxLength: 8,
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const CustomText(text: 'Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const CustomText(text: 'Cancel'),
+          ),
           FilledButton(
             onPressed: () => Navigator.pop(context, controller.text.trim().toUpperCase()),
             child: const CustomText(text: 'Send request', fontWeight: FontWeight.w700),

@@ -30,6 +30,15 @@ abstract class PlatformBridge {
 
   /// Deletes all counts and settings on this device.
   Future<void> deleteAll();
+
+  /// True once after the service opened the app because a reel limit was reached.
+  Future<bool> takeBlockRequest();
+
+  /// Called when the service asks for the block screen while the app is running.
+  void setBlockRequestHandler(void Function() handler);
+
+  /// Raises today's limits by [reels] (unlock on the block screen).
+  Future<void> grantBonus(int reels);
 }
 
 /// Real implementation over the channels registered in Bridge.kt.
@@ -52,8 +61,7 @@ class MethodChannelBridge implements PlatformBridge {
   }
 
   @override
-  Future<bool> isAccessibilityEnabled() async =>
-      await _control.invokeMethod<bool>('isAccessibilityEnabled') ?? false;
+  Future<bool> isAccessibilityEnabled() async => await _control.invokeMethod<bool>('isAccessibilityEnabled') ?? false;
 
   @override
   Future<void> openAccessibilitySettings() => _control.invokeMethod('openAccessibilitySettings');
@@ -77,4 +85,15 @@ class MethodChannelBridge implements PlatformBridge {
 
   @override
   Future<void> deleteAll() => _control.invokeMethod('deleteAll');
+
+  @override
+  Future<bool> takeBlockRequest() async => await _control.invokeMethod<bool>('takeBlockRequest') ?? false;
+
+  @override
+  void setBlockRequestHandler(void Function() handler) => _control.setMethodCallHandler((call) async {
+    if (call.method == 'blockRequested') handler();
+  });
+
+  @override
+  Future<void> grantBonus(int reels) => _control.invokeMethod('grantBonus', {'reels': reels});
 }

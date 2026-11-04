@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:go_router/go_router.dart';
 import 'package:scrollbuddy/core/custom_widgets/app_button/app_button.dart';
 import 'package:scrollbuddy/core/custom_widgets/app_card/app_card.dart';
 import 'package:scrollbuddy/core/custom_widgets/blob/soft_blob.dart';
@@ -14,10 +15,12 @@ import '../../data/counts_controller.dart';
 import '../../data/settings.dart';
 import '../dashboard/brain_view.dart';
 
-/// Flutter preview of the block screen. The real one is a native
-/// TYPE_ACCESSIBILITY_OVERLAY window (D-07) with the same content.
+/// Shown when a reel limit is reached: the service leaves the reels viewer and opens
+/// this screen. [preview] is the version opened from Limits; unlocking there does nothing.
 class BlockScreen extends StatefulWidget {
-  const BlockScreen({super.key});
+  const BlockScreen({super.key, this.preview = false});
+
+  final bool preview;
 
   static const unlockPhrase = 'I choose how I spend my time';
   static const waitSeconds = 30;
@@ -25,35 +28,64 @@ class BlockScreen extends StatefulWidget {
 
   @override
   State<BlockScreen> createState() => _BlockScreenState();
+
+  /// True while the real (non-preview) block screen is on screen, so a repeat block
+  /// brings it back instead of stacking another one.
+  static bool isOpen = false;
+
+  /// When the current block's wait began. Kept across screens until unlock, so
+  /// leaving and re-opening reels does not restart the countdown.
+  static DateTime? _waitStartedAt;
 }
 
 class _BlockScreenState extends State<BlockScreen> {
   Timer? _timer;
-  int _secondsLeft = BlockScreen.waitSeconds;
+  late final DateTime _waitStart;
+  late int _secondsLeft;
   final _phrase = TextEditingController();
+
+  int _remaining() =>
+      (BlockScreen.waitSeconds - DateTime.now().difference(_waitStart).inSeconds).clamp(0, BlockScreen.waitSeconds);
 
   @override
   void initState() {
     super.initState();
+    if (widget.preview) {
+      _waitStart = DateTime.now();
+    } else {
+      BlockScreen.isOpen = true;
+      _waitStart = BlockScreen._waitStartedAt ??= DateTime.now();
+    }
+    _secondsLeft = _remaining();
     _timer = Timer.periodic(const Duration(seconds: 1), (t) {
-      if (_secondsLeft == 0) return t.cancel();
-      setState(() => _secondsLeft--);
+      setState(() => _secondsLeft = _remaining());
+      if (_secondsLeft == 0) t.cancel();
     });
   }
 
   @override
   void dispose() {
+    if (!widget.preview) BlockScreen.isOpen = false;
     _timer?.cancel();
     _phrase.dispose();
     super.dispose();
   }
 
-  void _unlock() {
+  Future<void> _unlock() async {
+    if (!widget.preview) {
+      await Get.find<CountsController>().bridge.grantBonus(BlockScreen.bonusReels);
+      BlockScreen._waitStartedAt = null; // next block waits the full time again
+    }
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: CustomText(text: 'Unlocked ${BlockScreen.bonusReels} bonus reels (preview)')),
+      SnackBar(
+        content: CustomText(text: 'Unlocked ${BlockScreen.bonusReels} more reels${widget.preview ? ' (preview)' : ''}'),
+      ),
     );
-    Navigator.pop(context);
+    _close();
   }
+
+  void _close() => context.canPop() ? context.pop() : context.go('/');
 
   @override
   Widget build(BuildContext context) => Obx(() => _build(context));
@@ -79,10 +111,10 @@ class _BlockScreenState extends State<BlockScreen> {
                     Align(
                       alignment: Alignment.centerRight,
                       child: AppButton.text(
-                        label: 'Close preview',
+                        label: widget.preview ? 'Close preview' : 'Close',
                         expand: false,
                         compact: true,
-                        onPressed: () => Navigator.pop(context),
+                        onPressed: _close,
                       ),
                     ),
                     Column(

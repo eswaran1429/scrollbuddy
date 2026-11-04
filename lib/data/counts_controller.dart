@@ -56,8 +56,7 @@ class CountsController extends GetxController {
   }
 
   /// Called on app resume; user may have toggled the service in system settings.
-  Future<void> refreshAccessibility() async =>
-      accessibilityEnabled.value = await bridge.isAccessibilityEnabled();
+  Future<void> refreshAccessibility() async => accessibilityEnabled.value = await bridge.isAccessibilityEnabled();
 
   /// Opens system settings. Status is re-checked now and again when the app resumes.
   Future<void> openAccessibilitySettings() async {

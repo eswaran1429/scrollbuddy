@@ -5,7 +5,7 @@ import 'package:scrollbuddy/core/themes/app_tokens.dart';
 
 enum AppButtonVariant { primary, secondary, text }
 
-/// Pill button. Primary is solid sage; disabled when [onPressed] is null.
+/// Rounded button. Primary is solid sage; disabled when [onPressed] is null.
 class AppButton extends StatelessWidget {
   const AppButton({
     super.key,
@@ -58,10 +58,10 @@ class AppButton extends StatelessWidget {
       enabled: enabled,
       child: SizedBox(
         width: expand ? double.infinity : null,
-        height: compact ? 40 : 56,
+        height: compact ? 38 : 50,
         child: Material(
           color: bg,
-          shape: const StadiumBorder(),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(compact ? 12 : 16)),
           clipBehavior: Clip.antiAlias,
           child: InkWell(
             onTap: onPressed,
@@ -71,16 +71,13 @@ class AppButton extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  if (icon != null) ...[
-                    Icon(icon, color: fg, size: compact ? 18 : 20),
-                    const SizedBox(width: 8),
-                  ],
+                  if (icon != null) ...[Icon(icon, color: fg, size: compact ? 16 : 18), const SizedBox(width: 8)],
                   Flexible(
                     child: CustomText(
                       text: label,
                       color: fg,
                       fontWeight: FontWeight.w600,
-                      fontSize: compact ? 14 : 16,
+                      fontSize: compact ? 13 : 14,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -95,7 +92,7 @@ class AppButton extends StatelessWidget {
   }
 }
 
-/// Round white icon button with a soft shadow.
+/// Rounded-square white icon button with a soft shadow.
 class AppIconButton extends StatelessWidget {
   const AppIconButton({super.key, required this.icon, required this.onPressed, required this.tooltip});
 
@@ -106,17 +103,18 @@ class AppIconButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DecoratedBox(
-      decoration: BoxDecoration(shape: BoxShape.circle, boxShadow: onPressed == null ? null : AppShadows.sm),
+      decoration: BoxDecoration(borderRadius: AppRadius.rSm, boxShadow: onPressed == null ? null : AppShadows.sm),
       child: IconButton(
         tooltip: tooltip,
         onPressed: onPressed,
-        icon: Icon(icon),
+        icon: Icon(icon, size: 22),
         style: IconButton.styleFrom(
           backgroundColor: AppColors.surface,
           foregroundColor: AppColors.textPrimary,
           disabledBackgroundColor: Colors.transparent,
           disabledForegroundColor: AppColors.textMuted.withValues(alpha: 0.4),
-          fixedSize: const Size(44, 44),
+          fixedSize: const Size(46, 46),
+          shape: const RoundedRectangleBorder(borderRadius: AppRadius.rSm),
         ),
       ),
     );

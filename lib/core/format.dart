@@ -8,5 +8,4 @@ String shortDate(DateTime d) => '${_weekdays[d.weekday - 1]} ${d.day} ${_months[
 String weekdayLetter(DateTime d) => _weekdays[d.weekday - 1][0];
 
 /// e.g. "09:05".
-String hhmm(DateTime d) =>
-    '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
+String hhmm(DateTime d) => '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';

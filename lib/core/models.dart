@@ -26,8 +26,7 @@ class DayCounts {
 
   int of(TrackedApp app) => perApp[app] ?? 0;
 
-  DayCounts increment(TrackedApp app, [int by = 1]) =>
-      DayCounts(date: date, perApp: {...perApp, app: of(app) + by});
+  DayCounts increment(TrackedApp app, [int by = 1]) => DayCounts(date: date, perApp: {...perApp, app: of(app) + by});
 
   /// From the bridge format `{"date": "YYYY-MM-DD", "counts": {"instagram": 3, ...}}`.
   /// Unknown app keys are ignored.

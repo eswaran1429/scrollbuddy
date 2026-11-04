@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:scrollbuddy/core/custom_widgets/app_card/app_card.dart';
 import 'package:scrollbuddy/core/custom_widgets/app_tile/app_tile.dart';
 import 'package:scrollbuddy/core/custom_widgets/custom_text/custom_text.dart';
+import 'package:scrollbuddy/core/custom_widgets/page_header/page_header.dart';
 import 'package:scrollbuddy/core/custom_widgets/pill_tabs/pill_tabs.dart';
 import 'package:scrollbuddy/core/themes/app_colors.dart';
 
@@ -33,17 +34,16 @@ class _HistoryScreenState extends State<HistoryScreen> {
         child: Obx(() {
           final settings = _settings.settings.value;
           return ListView(
-            padding: const EdgeInsets.fromLTRB(24, 16, 24, 120),
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 120),
             children: [
-              const CustomText(text: 'History', fontSize: 26, fontWeight: FontWeight.w700, letterSpacing: -0.5),
-              CustomText(text: 'Your last $_range days', color: AppColors.textMuted),
-              const SizedBox(height: 20),
+              PageHeader(title: 'History', subtitle: 'Your last $_range days'),
+              const SizedBox(height: 18),
               PillTabs(
                 labels: const ['7 days', '30 days'],
                 selected: _range == 7 ? 0 : 1,
                 onChanged: (i) => setState(() => _range = i == 0 ? 7 : 30),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
               if (_counts.historyLoading.value)
                 const Padding(
                   padding: EdgeInsets.all(48),
@@ -76,9 +76,8 @@ class _HistoryBody extends StatelessWidget {
     final stats = computeStats(past, today, limit: limit);
     final best = stats.bestDay;
     final total = days.fold(0, (a, d) => a + d.total);
-    final perApp = [
-      for (final app in TrackedApp.values) (app, days.fold(0, (a, d) => a + d.of(app))),
-    ]..sort((a, b) => b.$2.compareTo(a.$2));
+    final perApp = [for (final app in TrackedApp.values) (app, days.fold(0, (a, d) => a + d.of(app)))]
+      ..sort((a, b) => b.$2.compareTo(a.$2));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -89,36 +88,57 @@ class _HistoryBody extends StatelessWidget {
             children: [
               Expanded(
                 child: _StatTile(
-                  value: '${stats.average}',
                   label: 'Average',
+                  value: '${stats.average}',
                   caption: 'per day',
-                  color: AppColors.sageSoft,
+                  icon: Icons.show_chart_rounded,
+                  color: AppColors.sage,
                 ),
               ),
               const SizedBox(width: 10),
               Expanded(
                 child: _StatTile(
-                  value: best == null ? '–' : '${best.total}',
                   label: 'Best day',
-                  caption: best == null ? null : shortDate(best.date),
-                  color: AppColors.lavenderSoft,
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _StatTile(
-                  value: limit == null ? '–' : '${stats.streak}d',
-                  label: 'Streak',
-                  caption: limit == null ? 'set a limit' : 'under limit',
-                  color: AppColors.peachSoft,
+                  value: best == null ? '–' : '${best.total}',
+                  caption: best == null ? 'no data yet' : shortDate(best.date),
+                  icon: Icons.emoji_events_outlined,
+                  color: AppColors.lavender,
                 ),
               ),
             ],
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 10),
         AppCard(
-          padding: const EdgeInsets.fromLTRB(12, 18, 18, 10),
+          padding: const EdgeInsets.all(14),
+          child: Row(
+            children: [
+              const IconBadge(icon: Icons.local_fire_department_outlined, color: AppColors.coral, size: 40),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SectionLabel('Streak'),
+                    CustomText(
+                      text: limit == null ? 'Set a limit to start' : '${stats.streak} days',
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ],
+                ),
+              ),
+              StatusPill(
+                text: limit == null ? 'No limit' : 'Under $limit',
+                color: limit == null ? AppColors.textMuted : AppColors.coral,
+                background: limit == null ? AppColors.surfaceHigh : AppColors.peachSoft,
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 10),
+        AppCard(
+          padding: const EdgeInsets.fromLTRB(10, 16, 16, 8),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -126,32 +146,49 @@ class _HistoryBody extends StatelessWidget {
                 padding: const EdgeInsets.only(left: 8),
                 child: Row(
                   children: [
-                    const CustomText(text: 'Reels per day', fontWeight: FontWeight.w600),
+                    const SectionLabel('Reels per day'),
                     const Spacer(),
                     if (limit != null) ...[
-                      Container(width: 14, height: 2, color: AppColors.coral),
+                      Container(width: 12, height: 2, color: AppColors.coral),
                       const SizedBox(width: 6),
-                      CustomText(text: 'limit $limit', fontSize: 12, color: AppColors.textMuted),
+                      CustomText(text: 'limit $limit', fontSize: 11, color: AppColors.textMuted),
                     ],
                   ],
                 ),
               ),
-              const SizedBox(height: 18),
-              SizedBox(height: 190, child: _Chart(days: days, limit: limit)),
+              const SizedBox(height: 16),
+              SizedBox(
+                height: 170,
+                child: _Chart(days: days, limit: limit),
+              ),
             ],
           ),
         ),
-        const SizedBox(height: 28),
-        const CustomText(text: 'By app', fontSize: 18, fontWeight: FontWeight.w600),
-        const SizedBox(height: 12),
+        const SizedBox(height: 10),
+        AppCard(
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SectionLabel('Summary'),
+              const SizedBox(height: 6),
+              InfoRow(label: 'Total reels', value: '$total'),
+              InfoRow(label: 'Days tracked', value: '${days.length}'),
+              InfoRow(label: 'Today', value: '${today.total}'),
+              if (limit != null) InfoRow(label: 'Daily limit', value: '$limit'),
+            ],
+          ),
+        ),
+        const SizedBox(height: 22),
         AppTileGroup(
+          title: 'By app',
           children: [
             for (final (app, n) in perApp)
               AppTile(
-                leading: IconBadge(icon: app.icon, color: app.color, size: 40),
+                leading: IconBadge(icon: app.icon, color: app.color, size: 38),
                 title: app.label,
                 subtitle: total == 0 ? '0% of reels' : '${(n * 100 / total).round()}% of reels',
-                trailing: CustomText(text: '$n', fontWeight: FontWeight.w700, fontSize: 17),
+                trailing: CustomText(text: '$n', fontWeight: FontWeight.w700, fontSize: 14),
               ),
           ],
         ),
@@ -161,27 +198,44 @@ class _HistoryBody extends StatelessWidget {
 }
 
 class _StatTile extends StatelessWidget {
-  const _StatTile({required this.value, required this.label, required this.color, this.caption});
+  const _StatTile({
+    required this.label,
+    required this.value,
+    required this.caption,
+    required this.icon,
+    required this.color,
+  });
 
-  final String value;
   final String label;
-  final String? caption;
+  final String value;
+  final String caption;
+  final IconData icon;
   final Color color;
 
   @override
   Widget build(BuildContext context) {
     return AppCard(
-      color: color,
-      radius: 22,
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+      padding: const EdgeInsets.all(14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          CustomText(text: label, fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textMuted),
-          const SizedBox(height: 4),
-          CustomText(text: value, fontSize: 24, fontWeight: FontWeight.w700),
-          if (caption != null)
-            CustomText(text: caption!, fontSize: 11, color: AppColors.textMuted, maxLines: 1),
+          SectionLabel(label),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              IconBadge(icon: icon, color: color, size: 38),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    CustomText(text: value, fontSize: 16, fontWeight: FontWeight.w700, height: 1.2),
+                    CustomText(text: caption, fontSize: 11, color: AppColors.textMuted, maxLines: 1),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -245,10 +299,12 @@ class _Chart extends StatelessWidget {
             ),
           ),
         ],
-        extraLinesData: ExtraLinesData(horizontalLines: [
-          if (limit != null)
-            HorizontalLine(y: limit!.toDouble(), color: AppColors.coral, strokeWidth: 1.5, dashArray: const [5, 4]),
-        ]),
+        extraLinesData: ExtraLinesData(
+          horizontalLines: [
+            if (limit != null)
+              HorizontalLine(y: limit!.toDouble(), color: AppColors.coral, strokeWidth: 1.5, dashArray: const [5, 4]),
+          ],
+        ),
         titlesData: FlTitlesData(
           topTitles: const AxisTitles(),
           // Empty right gutter so the "Today" label is not clipped.

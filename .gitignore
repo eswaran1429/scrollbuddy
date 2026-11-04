@@ -48,3 +48,4 @@ assets/sample/
 docs/
 flutter_*.png
 claude.md
+.claude/

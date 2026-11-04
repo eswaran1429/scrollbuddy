@@ -29,8 +29,7 @@ class BrainView extends StatefulWidget {
 }
 
 class _BrainViewState extends State<BrainView> with SingleTickerProviderStateMixin {
-  late final AnimationController _breath =
-      AnimationController(vsync: this, duration: const Duration(seconds: 3));
+  late final AnimationController _breath = AnimationController(vsync: this, duration: const Duration(seconds: 3));
 
   @override
   void initState() {
@@ -41,8 +40,7 @@ class _BrainViewState extends State<BrainView> with SingleTickerProviderStateMix
   @override
   void didUpdateWidget(BrainView old) {
     super.didUpdateWidget(old);
-    if (brainStateFor(old.count, limit: old.limit) !=
-        brainStateFor(widget.count, limit: widget.limit)) {
+    if (brainStateFor(old.count, limit: old.limit) != brainStateFor(widget.count, limit: widget.limit)) {
       HapticFeedback.mediumImpact();
     }
     if (widget.reducedMotion && _breath.isAnimating) {
@@ -83,9 +81,12 @@ class _BrainViewState extends State<BrainView> with SingleTickerProviderStateMix
             ),
           ),
           if (widget.showLabel) ...[
-            CustomText(text: state.label, style: text.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
-            CustomText(text: 
-              'A visualization, not a diagnosis',
+            CustomText(
+              text: state.label,
+              style: text.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+            ),
+            CustomText(
+              text: 'A visualization, not a diagnosis',
               style: text.labelSmall?.copyWith(color: Theme.of(context).colorScheme.outline),
             ),
           ],
@@ -149,10 +150,7 @@ class BrainPainter extends CustomPainter {
     for (var k = 0; k < 10; k++) {
       final a = 2 * pi * k / 10;
       final bump = Path()
-        ..addOval(Rect.fromCircle(
-          center: c + Offset(cos(a) * r * 0.72, sin(a) * r * 0.5),
-          radius: r * 0.4,
-        ));
+        ..addOval(Rect.fromCircle(center: c + Offset(cos(a) * r * 0.72, sin(a) * r * 0.5), radius: r * 0.4));
       shape = Path.combine(PathOperation.union, shape, bump);
     }
     canvas.drawPath(shape, Paint()..color = body);
@@ -256,8 +254,13 @@ class BrainPainter extends CustomPainter {
         for (final o in eyes) {
           canvas.drawArc(Rect.fromCircle(center: o, radius: e), pi, pi, false, p);
         }
-        canvas.drawArc(Rect.fromCircle(center: mouth - Offset(0, r * 0.12), radius: r * 0.2),
-            pi * 0.15, pi * 0.7, false, p);
+        canvas.drawArc(
+          Rect.fromCircle(center: mouth - Offset(0, r * 0.12), radius: r * 0.2),
+          pi * 0.15,
+          pi * 0.7,
+          false,
+          p,
+        );
       case BrainState.tired:
         for (final o in eyes) {
           canvas.drawLine(o - Offset(e, 0), o + Offset(e, 0), p);
