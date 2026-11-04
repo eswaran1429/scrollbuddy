@@ -15,8 +15,7 @@ class ScrollBuddyApp extends StatefulWidget {
 }
 
 class _ScrollBuddyAppState extends State<ScrollBuddyApp> with WidgetsBindingObserver {
-  final GoRouter _router =
-      createRouter(onboardingDone: Get.find<SettingsController>().settings.value.onboardingDone);
+  final GoRouter _router = createRouter(onboardingDone: Get.find<SettingsController>().settings.value.onboardingDone);
 
   @override
   void initState() {
@@ -31,7 +30,6 @@ class _ScrollBuddyAppState extends State<ScrollBuddyApp> with WidgetsBindingObse
     super.dispose();
   }
 
-  /// User may have toggled the accessibility service in system settings.
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) Get.find<CountsController>().refreshAccessibility();

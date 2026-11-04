@@ -5,8 +5,6 @@ import '../data/counts_controller.dart';
 import '../data/settings.dart';
 import '../features/battles/battles_data.dart';
 
-/// Registers app-wide controllers and loads saved settings. Called from main()
-/// and from tests (after Get.reset(), with a fake bridge).
 Future<void> initDependencies({PlatformBridge? bridge}) async {
   final b = bridge ?? MethodChannelBridge();
   await Get.put(SettingsController(b)).load();
