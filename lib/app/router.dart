@@ -9,20 +9,33 @@ import '../features/history/history_screen.dart';
 import '../features/limits/limits_screen.dart';
 import '../features/onboarding/onboarding_screen.dart';
 import '../features/settings/settings_screen.dart';
+import '../features/splash/splash_screen.dart';
 
-GoRouter createRouter({required bool onboardingDone}) {
+/// Fades a page in; used for the screens the splash hands over to.
+CustomTransitionPage<void> _fade(GoRouterState state, Widget child) => CustomTransitionPage<void>(
+      key: state.pageKey,
+      child: child,
+      transitionDuration: const Duration(milliseconds: 350),
+      transitionsBuilder: (context, animation, _, child) => FadeTransition(opacity: animation, child: child),
+    );
+
+/// The splash decides whether to continue to onboarding or Today.
+GoRouter createRouter() {
   return GoRouter(
-    initialLocation: onboardingDone ? '/' : '/onboarding',
+    initialLocation: '/splash',
     routes: [
+      GoRoute(path: '/splash', builder: (context, state) => const SplashScreen()),
       GoRoute(
         path: '/onboarding',
-        builder: (context, state) =>
-            OnboardingScreen(startPage: int.tryParse(state.uri.queryParameters['step'] ?? '') ?? 0),
+        pageBuilder: (context, state) => _fade(
+          state,
+          OnboardingScreen(startPage: int.tryParse(state.uri.queryParameters['step'] ?? '') ?? 0),
+        ),
       ),
       GoRoute(path: '/limits', builder: (context, state) => const LimitsScreen()),
       GoRoute(path: '/block-preview', builder: (context, state) => const BlockScreen()),
       StatefulShellRoute.indexedStack(
-        builder: (context, state, shell) => _HomeShell(shell: shell),
+        pageBuilder: (context, state, shell) => _fade(state, _HomeShell(shell: shell)),
         branches: [
           StatefulShellBranch(
             routes: [GoRoute(path: '/', builder: (context, state) => const DashboardScreen())],

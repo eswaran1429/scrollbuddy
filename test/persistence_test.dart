@@ -9,7 +9,8 @@ import 'package:scrollbuddy/data/settings.dart';
 import 'fake_platform_bridge.dart';
 
 Future<void> settle(WidgetTester tester) async {
-  for (var i = 0; i < 10; i++) {
+  // 2.5 s covers the 1.8 s splash on first pump.
+  for (var i = 0; i < 25; i++) {
     await tester.pump(const Duration(milliseconds: 100));
   }
 }

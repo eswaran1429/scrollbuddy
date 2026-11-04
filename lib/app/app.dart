@@ -3,7 +3,6 @@ import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
 
 import '../data/counts_controller.dart';
-import '../data/settings.dart';
 import 'router.dart';
 import 'theme.dart';
 
@@ -15,7 +14,7 @@ class ScrollBuddyApp extends StatefulWidget {
 }
 
 class _ScrollBuddyAppState extends State<ScrollBuddyApp> with WidgetsBindingObserver {
-  final GoRouter _router = createRouter(onboardingDone: Get.find<SettingsController>().settings.value.onboardingDone);
+  final GoRouter _router = createRouter();
 
   @override
   void initState() {

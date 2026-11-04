@@ -10,7 +10,8 @@ import 'fake_platform_bridge.dart';
 
 Future<void> settle(WidgetTester tester) async {
   // pumpAndSettle would hang on the brain's repeating breath animation.
-  for (var i = 0; i < 10; i++) {
+  // 2.5 s covers the 1.8 s splash on first pump.
+  for (var i = 0; i < 25; i++) {
     await tester.pump(const Duration(milliseconds: 100));
   }
 }
@@ -164,5 +165,15 @@ void main() {
     await tester.drag(find.byType(ListView).first, const Offset(0, -300));
     await settle(tester);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('splash animates, then continues to onboarding', (tester) async {
+    await tester.pumpWidget(const ScrollBuddyApp());
+    await tester.pump(const Duration(milliseconds: 1500));
+    expect(find.text('Every reel, counted.'), findsOneWidget);
+    expect(find.text('Get started'), findsNothing);
+    await settle(tester);
+    expect(find.text('Every reel, counted.'), findsNothing);
+    expect(find.text('Get started'), findsOneWidget);
   });
 }
