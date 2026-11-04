@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dart analyze *)",
+      "PowerShell(flutter analyze lib/features/main/chat lib/config/routes/app_route.dart lib/features/main/trip_details/screens/trip_in_progress_screen.dart)",
+      "PowerShell(flutter analyze lib/features/main/chat lib/data/repositories/chat_api lib/config/constants/app_endpoints.dart)",
+      "PowerShell(flutter pub get)",
+      "PowerShell(flutter analyze lib/features/main/my_trips/views/my_trips_screen.dart lib/features/main/my_trips/controllers/my_trips_controller.dart lib/features/main/trip_details/service/trip_state_service.dart lib/features/main/home/controllers/home_controller.dart 2>&1)",
+      "PowerShell(flutter analyze lib/features/main/chat/controllers/chat_controller.dart lib/features/main/trip_details/service/trip_state_service.dart 2>&1)",
+      "Bash(flutter analyze *)",
+      "Bash(flutter pub *)",
+      "Bash(dart run *)",
+      "PowerShell(flutter analyze lib/features/main/profile lib/features/main/saved_addresses lib/data/repositories/profile_api lib/config/constants/app_endpoints.dart 2>&1)",
+      "PowerShell(flutter analyze lib/features/main/profile lib/features/main/saved_addresses lib/data/repositories/profile_api lib/core/services/network_service/api_service.dart 2>&1)",
+      "PowerShell(flutter analyze lib/features/main/profile lib/features/main/saved_addresses lib/data/repositories/profile_api 2>&1)",
+      "PowerShell(flutter analyze lib/features/main/payment/views/payment_success_screen.dart lib/data/repositories/trip_api/trips_repository.dart lib/core/services/network_service/api_service.dart 2>&1)",
+      "PowerShell(flutter analyze lib/features/main/saved_addresses lib/data/repositories/saved_address_api lib/config/constants/app_endpoints.dart 2>&1)",
+      "PowerShell(flutter analyze lib/features/main/saved_addresses 2>&1)",
+      "PowerShell(flutter analyze lib/features/main/home/widgets/location_bottom_sheet.dart 2>&1)",
+      "PowerShell(flutter analyze lib/features/main/profile lib/data/repositories/upload_api lib/config/constants/app_endpoints.dart 2>&1)",
+      "PowerShell(flutter analyze lib/features/main/profile lib/data/repositories/upload_api 2>&1)",
+      "PowerShell(flutter analyze lib/features/main/profile 2>&1)",
+      "PowerShell(flutter analyze lib/features/main/profile/views/profile_screen.dart 2>&1)"
+    ]
+  }
+}
