@@ -75,6 +75,13 @@ class CountBubble(private val service: AccessibilityService, private val store: 
             y = saved?.second ?: (statusBarHeight() + v.dp(40f).toInt())
         }
         enableDrag(v, params)
+        // The counter gets wider at 100 (3 tiles): keep it fully on screen after it grows.
+        v.addOnLayoutChangeListener { _, l, _, r, _, ol, _, or, _ ->
+            if (r - l != or - ol && view === v) {
+                clamp(v, params)
+                runCatching { wm.updateViewLayout(v, params) }
+            }
+        }
         wm.addView(v, params)
         view = v
     }

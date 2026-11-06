@@ -9,7 +9,7 @@ import 'widget_test.dart' show settle;
 void main() {
   testWidgets('opened at the limit, the block screen shows and Close goes to Today', (tester) async {
     final bridge = FakePlatformBridge()..blockRequested = true;
-    await bridge.saveSettings({'onboardingDone': true, 'dailyLimit': 10, 'blockingEnabled': true});
+    await bridge.saveSettings({'onboardingDone': true, 'dailyLimit': 10});
     Get.reset();
     await initDependencies(bridge: bridge);
 
@@ -26,7 +26,7 @@ void main() {
 
   testWidgets('a repeat block reuses the open screen and keeps the countdown', (tester) async {
     final bridge = FakePlatformBridge()..blockRequested = true;
-    await bridge.saveSettings({'onboardingDone': true, 'dailyLimit': 10, 'blockingEnabled': true});
+    await bridge.saveSettings({'onboardingDone': true, 'dailyLimit': 10});
     Get.reset();
     await initDependencies(bridge: bridge);
 

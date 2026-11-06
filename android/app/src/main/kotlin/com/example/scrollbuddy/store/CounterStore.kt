@@ -14,7 +14,7 @@ import java.util.concurrent.CopyOnWriteArraySet
  * Service and activity run in the same process, so one shared instance is used.
  */
 class CounterStore private constructor(context: Context) :
-    SQLiteOpenHelper(context, "scrollbuddy.db", null, 1) {
+    SQLiteOpenHelper(context, "scrollbuddy.db", null, 2) {
 
     fun interface Listener {
         fun onTodayChanged(today: Map<String, Int>)
@@ -26,6 +26,7 @@ class CounterStore private constructor(context: Context) :
     private data class ServiceSettings(
         val trackedApps: Set<String>,
         val showOverlay: Boolean,
+        val overlayAfter: Int = 0,
         val limits: Limits = Limits(),
     )
 
@@ -38,9 +39,18 @@ class CounterStore private constructor(context: Context) :
                 "count INTEGER NOT NULL, PRIMARY KEY (local_date, app_key))",
         )
         db.execSQL("CREATE TABLE settings (key TEXT PRIMARY KEY, value TEXT NOT NULL)")
+        createSecondsTable(db)
     }
 
-    override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) = Unit
+    override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
+        if (oldVersion < 2) createSecondsTable(db)
+    }
+
+    /** Seconds spent in each app's reels viewer per local day (v2). */
+    private fun createSecondsTable(db: SQLiteDatabase) = db.execSQL(
+        "CREATE TABLE daily_seconds (local_date TEXT NOT NULL, app_key TEXT NOT NULL, " +
+            "seconds INTEGER NOT NULL, PRIMARY KEY (local_date, app_key))",
+    )
 
     fun addListener(l: Listener) = listeners.add(l)
 
@@ -48,24 +58,35 @@ class CounterStore private constructor(context: Context) :
 
     /** Adds [by] to today's count for [appKey]. Uses the local date at call time, so midnight rollover is automatic. */
     fun increment(appKey: String, by: Int = 1) {
+        addToday("daily_counts", "count", appKey, by)
+        notifyListeners()
+    }
+
+    /** Adds [seconds] watched in [appKey]'s reels viewer today. */
+    fun addSeconds(appKey: String, seconds: Int) {
+        addToday("daily_seconds", "seconds", appKey, seconds)
+        notifyListeners()
+    }
+
+    private fun addToday(table: String, column: String, appKey: String, by: Int) {
         val date = today()
         val db = writableDatabase
         db.beginTransaction()
         try {
             val update = db.compileStatement(
-                "UPDATE daily_counts SET count = count + ? WHERE local_date = ? AND app_key = ?",
+                "UPDATE $table SET $column = $column + ? WHERE local_date = ? AND app_key = ?",
             )
             update.bindLong(1, by.toLong())
             update.bindString(2, date)
             update.bindString(3, appKey)
             if (update.executeUpdateDelete() == 0) {
                 db.insert(
-                    "daily_counts",
+                    table,
                     null,
                     ContentValues().apply {
                         put("local_date", date)
                         put("app_key", appKey)
-                        put("count", by)
+                        put(column, by)
                     },
                 )
             }
@@ -73,15 +94,15 @@ class CounterStore private constructor(context: Context) :
         } finally {
             db.endTransaction()
         }
-        notifyListeners()
     }
 
-    fun countsFor(date: String): Map<String, Int> {
+    fun countsFor(date: String): Map<String, Int> = perApp("daily_counts", "count", date)
+
+    fun secondsFor(date: String): Map<String, Int> = perApp("daily_seconds", "seconds", date)
+
+    private fun perApp(table: String, column: String, date: String): Map<String, Int> {
         val out = mutableMapOf<String, Int>()
-        readableDatabase.rawQuery(
-            "SELECT app_key, count FROM daily_counts WHERE local_date = ?",
-            arrayOf(date),
-        ).use { c ->
+        readableDatabase.rawQuery("SELECT app_key, $column FROM $table WHERE local_date = ?", arrayOf(date)).use { c ->
             while (c.moveToNext()) out[c.getString(0)] = c.getInt(1)
         }
         return out
@@ -110,11 +131,13 @@ class CounterStore private constructor(context: Context) :
 
     fun resetToday() {
         writableDatabase.delete("daily_counts", "local_date = ?", arrayOf(today()))
+        writableDatabase.delete("daily_seconds", "local_date = ?", arrayOf(today()))
         notifyListeners()
     }
 
     fun deleteAll() {
         writableDatabase.delete("daily_counts", null, null)
+        writableDatabase.delete("daily_seconds", null, null)
         writableDatabase.delete("settings", null, null)
         cache = null
         notifyListeners()
@@ -166,7 +189,10 @@ class CounterStore private constructor(context: Context) :
     /** Whether to show the floating counter over the reels viewer. On by default. */
     fun showOverlay(): Boolean = serviceSettings().showOverlay
 
-    /** Daily and per-app limits, and whether blocking is on. */
+    /** The counter appears once today's total reaches this (0 = from the first reel). */
+    fun overlayAfter(): Int = serviceSettings().overlayAfter
+
+    /** Daily reel limit; blocking is on whenever it is set. */
     fun limits(): Limits = serviceSettings().limits
 
     /** Bonus reels unlocked today from the block screen. */
@@ -195,14 +221,10 @@ class CounterStore private constructor(context: Context) :
         val obj = json?.let { runCatching { JSONObject(it) }.getOrNull() } ?: return ServiceSettings(ALL_APPS, true)
         val arr = obj.optJSONArray("trackedApps")
         val tracked = if (arr == null) ALL_APPS else (0 until arr.length()).map { arr.getString(it) }.toSet()
-        val perAppObj = obj.optJSONObject("perAppLimits")
-        val perApp = perAppObj?.keys()?.asSequence()?.associateWith { perAppObj.getInt(it) } ?: emptyMap()
         val limits = Limits(
-            blockingEnabled = obj.optBoolean("blockingEnabled", false),
             dailyLimit = if (obj.isNull("dailyLimit")) null else obj.optInt("dailyLimit"),
-            perApp = perApp,
         )
-        return ServiceSettings(tracked, obj.optBoolean("showOverlay", true), limits)
+        return ServiceSettings(tracked, obj.optBoolean("showOverlay", true), obj.optInt("overlayAfter", 0), limits)
     }
 
     private fun notifyListeners() {

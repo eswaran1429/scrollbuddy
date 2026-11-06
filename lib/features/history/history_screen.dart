@@ -76,8 +76,11 @@ class _HistoryBody extends StatelessWidget {
     final stats = computeStats(past, today, limit: limit);
     final best = stats.bestDay;
     final total = days.fold(0, (a, d) => a + d.total);
-    final perApp = [for (final app in TrackedApp.values) (app, days.fold(0, (a, d) => a + d.of(app)))]
-      ..sort((a, b) => b.$2.compareTo(a.$2));
+    final totalSeconds = days.fold(0, (a, d) => a + d.totalSeconds);
+    final perApp = [
+      for (final app in TrackedApp.values)
+        (app, days.fold(0, (a, d) => a + d.of(app)), days.fold(0, (a, d) => a + d.secondsOf(app))),
+    ]..sort((a, b) => b.$2.compareTo(a.$2));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -173,6 +176,8 @@ class _HistoryBody extends StatelessWidget {
               const SectionLabel('Summary'),
               const SizedBox(height: 6),
               InfoRow(label: 'Total reels', value: '$total'),
+              InfoRow(label: 'Time in reels', value: watchTime(totalSeconds)),
+              InfoRow(label: 'Time per day', value: watchTime(totalSeconds ~/ days.length)),
               InfoRow(label: 'Days tracked', value: '${days.length}'),
               InfoRow(label: 'Today', value: '${today.total}'),
               if (limit != null) InfoRow(label: 'Daily limit', value: '$limit'),
@@ -183,11 +188,11 @@ class _HistoryBody extends StatelessWidget {
         AppTileGroup(
           title: 'By app',
           children: [
-            for (final (app, n) in perApp)
+            for (final (app, n, secs) in perApp)
               AppTile(
                 leading: IconBadge(icon: app.icon, color: app.color, size: 38),
                 title: app.label,
-                subtitle: total == 0 ? '0% of reels' : '${(n * 100 / total).round()}% of reels',
+                subtitle: '${total == 0 ? 0 : (n * 100 / total).round()}% of reels · ${watchTime(secs)}',
                 trailing: CustomText(text: '$n', fontWeight: FontWeight.w700, fontSize: 14),
               ),
           ],

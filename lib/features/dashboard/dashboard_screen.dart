@@ -13,6 +13,7 @@ import 'package:scrollbuddy/core/custom_widgets/page_header/page_header.dart';
 import 'package:scrollbuddy/core/themes/app_colors.dart';
 
 import '../../core/brain_state.dart';
+import '../../core/format.dart';
 import '../../core/models.dart';
 import '../../data/counts_controller.dart';
 import '../../data/settings.dart';
@@ -74,7 +75,11 @@ class DashboardScreen extends StatelessWidget {
                       tooltip: 'Debug: add reels',
                       onPressed: () => _showDebugSheet(context, counts),
                     ),
-                  AppIconButton(icon: Icons.tune, tooltip: 'Limits', onPressed: () => context.push('/limits')),
+                  AppIconButton(
+                    icon: Icons.settings_outlined,
+                    tooltip: 'Settings',
+                    onPressed: () => context.push('/settings'),
+                  ),
                 ],
               ),
               const SizedBox(height: 18),
@@ -111,7 +116,7 @@ class DashboardScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 10),
                     Semantics(
-                      label: '${today.total} reels today',
+                      label: '${today.total} reels today, ${watchTime(today.totalSeconds)} in reels',
                       excludeSemantics: true,
                       child: Column(
                         children: [
@@ -123,6 +128,20 @@ class DashboardScreen extends StatelessWidget {
                             letterSpacing: -1,
                           ),
                           const CustomText(text: 'reels today', fontSize: 12, color: AppColors.textMuted),
+                          const SizedBox(height: 10),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.schedule_rounded, size: 15, color: AppColors.lavender),
+                              const SizedBox(width: 5),
+                              CustomText(
+                                text: '${watchTime(today.totalSeconds)} in reels',
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.lavender,
+                              ),
+                            ],
+                          ),
                         ],
                       ),
                     ),
@@ -252,7 +271,7 @@ class _TrackingOffCard extends StatelessWidget {
             ),
           ),
           AppButton.text(
-            label: 'Fix',
+            label: 'On',
             compact: true,
             expand: false,
             onPressed: () => context.push('/onboarding?step=1'),
@@ -328,13 +347,7 @@ class _LimitCard extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           CustomText(
-            text: !reached
-                ? settings.blockingEnabled
-                      ? 'Reels pause at the limit'
-                      : 'Blocking is off'
-                : settings.blockingEnabled
-                ? 'Limit reached. Reels are paused.'
-                : 'Limit reached. Blocking is off.',
+            text: reached ? 'Limit reached. Reels are paused.' : 'Reels pause at the limit',
             fontSize: 11,
             color: AppColors.textMuted,
           ),

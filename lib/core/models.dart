@@ -14,30 +14,44 @@ enum TrackedApp {
   final IconData icon;
 }
 
-/// Reel counts for one local calendar day.
+/// Reel counts and time in reels for one local calendar day.
 class DayCounts {
-  const DayCounts({required this.date, required this.perApp});
+  const DayCounts({required this.date, required this.perApp, this.seconds = const {}});
 
   /// Local date at midnight.
   final DateTime date;
   final Map<TrackedApp, int> perApp;
 
+  /// Seconds spent in each app's reels viewer.
+  final Map<TrackedApp, int> seconds;
+
   int get total => perApp.values.fold(0, (a, b) => a + b);
+
+  int get totalSeconds => seconds.values.fold(0, (a, b) => a + b);
 
   int of(TrackedApp app) => perApp[app] ?? 0;
 
-  DayCounts increment(TrackedApp app, [int by = 1]) => DayCounts(date: date, perApp: {...perApp, app: of(app) + by});
+  int secondsOf(TrackedApp app) => seconds[app] ?? 0;
 
-  /// From the bridge format `{"date": "YYYY-MM-DD", "counts": {"instagram": 3, ...}}`.
+  DayCounts increment(TrackedApp app, [int by = 1]) =>
+      DayCounts(date: date, perApp: {...perApp, app: of(app) + by}, seconds: seconds);
+
+  /// From the bridge format
+  /// `{"date": "YYYY-MM-DD", "counts": {"instagram": 3, ...}, "seconds": {"instagram": 95, ...}}`.
   /// Unknown app keys are ignored.
   factory DayCounts.fromMap(Map<String, dynamic> m) {
-    final counts = Map<String, dynamic>.from(m['counts'] as Map? ?? const {});
+    Map<TrackedApp, int> perApp(Object? raw) {
+      final map = Map<String, dynamic>.from(raw as Map? ?? const {});
+      return {
+        for (final app in TrackedApp.values)
+          if (map[app.name] != null) app: (map[app.name] as num).toInt(),
+      };
+    }
+
     return DayCounts(
       date: DateTime.parse(m['date'] as String),
-      perApp: {
-        for (final app in TrackedApp.values)
-          if (counts[app.name] != null) app: (counts[app.name] as num).toInt(),
-      },
+      perApp: perApp(m['counts']),
+      seconds: perApp(m['seconds']),
     );
   }
 }

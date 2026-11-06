@@ -15,24 +15,23 @@ enum UnlockMode {
   final String description;
 }
 
-/// User settings. Saved as JSON in the native store (D-05) so the accessibility
+/// User settings. One reel limit: the daily total across all tracked apps.
+/// When it is set, reels are blocked once it is reached.
+/// Saved as JSON in the native store (D-05) so the accessibility
 /// service can read them (it uses `trackedApps`).
 class AppSettings {
   const AppSettings({
     this.dailyLimit,
-    this.perAppLimits = const {},
-    this.blockingEnabled = false,
     this.unlockMode = UnlockMode.wait,
     this.strictUntil,
     this.trackedApps = const {...TrackedApp.values},
     this.reducedMotion = false,
     this.onboardingDone = false,
     this.showOverlay = true,
+    this.overlayAfter = 0,
   });
 
   final int? dailyLimit;
-  final Map<TrackedApp, int> perAppLimits;
-  final bool blockingEnabled;
   final UnlockMode unlockMode;
   final DateTime? strictUntil;
   final Set<TrackedApp> trackedApps;
@@ -42,40 +41,40 @@ class AppSettings {
   /// Floating counter over the reels viewer (read by the native service).
   final bool showOverlay;
 
+  /// The floating counter appears once today's total reaches this. 0 = from the first reel.
+  final int overlayAfter;
+
   bool strictActive(DateTime now) => strictUntil != null && now.isBefore(strictUntil!);
 
   AppSettings copyWith({
     int? Function()? dailyLimit,
-    Map<TrackedApp, int>? perAppLimits,
-    bool? blockingEnabled,
     UnlockMode? unlockMode,
     DateTime? Function()? strictUntil,
     Set<TrackedApp>? trackedApps,
     bool? reducedMotion,
     bool? onboardingDone,
     bool? showOverlay,
+    int? overlayAfter,
   }) => AppSettings(
     dailyLimit: dailyLimit != null ? dailyLimit() : this.dailyLimit,
-    perAppLimits: perAppLimits ?? this.perAppLimits,
-    blockingEnabled: blockingEnabled ?? this.blockingEnabled,
     unlockMode: unlockMode ?? this.unlockMode,
     strictUntil: strictUntil != null ? strictUntil() : this.strictUntil,
     trackedApps: trackedApps ?? this.trackedApps,
     reducedMotion: reducedMotion ?? this.reducedMotion,
     onboardingDone: onboardingDone ?? this.onboardingDone,
     showOverlay: showOverlay ?? this.showOverlay,
+    overlayAfter: overlayAfter ?? this.overlayAfter,
   );
 
   Map<String, dynamic> toJson() => {
     'dailyLimit': dailyLimit,
-    'perAppLimits': {for (final e in perAppLimits.entries) e.key.name: e.value},
-    'blockingEnabled': blockingEnabled,
     'unlockMode': unlockMode.name,
     'strictUntil': strictUntil?.millisecondsSinceEpoch,
     'trackedApps': [for (final a in trackedApps) a.name],
     'reducedMotion': reducedMotion,
     'onboardingDone': onboardingDone,
     'showOverlay': showOverlay,
+    'overlayAfter': overlayAfter,
   };
 
   /// Missing or unknown values fall back to defaults.
@@ -85,16 +84,13 @@ class AppSettings {
     final strict = j['strictUntil'] as int?;
     return AppSettings(
       dailyLimit: j['dailyLimit'] as int?,
-      perAppLimits: {
-        for (final e in (j['perAppLimits'] as Map? ?? const {}).entries) ?app(e.key as String): e.value as int,
-      },
-      blockingEnabled: j['blockingEnabled'] as bool? ?? false,
       unlockMode: UnlockMode.values.asNameMap()[j['unlockMode']] ?? UnlockMode.wait,
       strictUntil: strict == null ? null : DateTime.fromMillisecondsSinceEpoch(strict),
       trackedApps: tracked == null ? const {...TrackedApp.values} : {for (final n in tracked) ?app(n as String)},
       reducedMotion: j['reducedMotion'] as bool? ?? false,
       onboardingDone: j['onboardingDone'] as bool? ?? false,
       showOverlay: j['showOverlay'] as bool? ?? true,
+      overlayAfter: j['overlayAfter'] as int? ?? 0,
     );
   }
 }
@@ -121,16 +117,7 @@ class SettingsController extends GetxController {
 
   void markOnboardingDone() => _s = _s.copyWith(onboardingDone: true);
 
-  void setDailyLimit(int? limit) =>
-      _s = _s.copyWith(dailyLimit: () => limit, blockingEnabled: limit == null ? false : null);
-
-  void setPerAppLimit(TrackedApp app, int? limit) {
-    final next = {..._s.perAppLimits};
-    limit == null ? next.remove(app) : next[app] = limit;
-    _s = _s.copyWith(perAppLimits: next);
-  }
-
-  void setBlocking(bool on) => _s = _s.copyWith(blockingEnabled: on);
+  void setDailyLimit(int? limit) => _s = _s.copyWith(dailyLimit: () => limit);
 
   void setUnlockMode(UnlockMode mode) => _s = _s.copyWith(unlockMode: mode);
 
@@ -142,6 +129,8 @@ class SettingsController extends GetxController {
   void setReducedMotion(bool on) => _s = _s.copyWith(reducedMotion: on);
 
   void setShowOverlay(bool on) => _s = _s.copyWith(showOverlay: on);
+
+  void setOverlayAfter(int reels) => _s = _s.copyWith(overlayAfter: reels);
 
   /// Back to defaults after "Delete all data". Onboarding stays done.
   void reset() => _s = const AppSettings(onboardingDone: true);

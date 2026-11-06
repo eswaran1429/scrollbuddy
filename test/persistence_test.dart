@@ -19,12 +19,11 @@ void main() {
   test('AppSettings survives a JSON round trip', () {
     final s = AppSettings(
       dailyLimit: 80,
-      perAppLimits: const {TrackedApp.youtube: 20},
-      blockingEnabled: true,
       unlockMode: UnlockMode.task,
       strictUntil: DateTime(2026, 11, 4, 22, 30),
       trackedApps: const {TrackedApp.instagram, TrackedApp.youtube},
       reducedMotion: true,
+      overlayAfter: 25,
       onboardingDone: true,
     );
     final back = AppSettings.fromJson(s.toJson());
@@ -35,11 +34,9 @@ void main() {
     final s = AppSettings.fromJson({
       'trackedApps': ['instagram', 'tiktok'],
       'unlockMode': 'nope',
-      'perAppLimits': {'tiktok': 5},
     });
     expect(s.trackedApps, {TrackedApp.instagram});
     expect(s.unlockMode, UnlockMode.wait);
-    expect(s.perAppLimits, isEmpty);
     expect(s.onboardingDone, isFalse);
   });
 

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
 import 'package:scrollbuddy/core/custom_widgets/app_button/app_button.dart';
@@ -7,11 +6,9 @@ import 'package:scrollbuddy/core/custom_widgets/app_card/app_card.dart';
 import 'package:scrollbuddy/core/custom_widgets/app_tile/app_tile.dart';
 import 'package:scrollbuddy/core/custom_widgets/custom_text/custom_text.dart';
 import 'package:scrollbuddy/core/custom_widgets/page_header/page_header.dart';
-import 'package:scrollbuddy/core/custom_widgets/custom_textfield/custom_textfield.dart';
 import 'package:scrollbuddy/core/themes/app_colors.dart';
 
 import '../../core/format.dart';
-import '../../core/models.dart';
 import '../../data/settings.dart';
 
 class LimitsScreen extends StatelessWidget {
@@ -29,10 +26,11 @@ class LimitsScreen extends StatelessWidget {
 
     return Scaffold(
       body: SafeArea(
+        bottom: false,
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 120),
           children: [
-            const PageHeader(title: 'Limits', subtitle: 'Daily limits and blocking', showBack: true),
+            const PageHeader(title: 'Limits', subtitle: 'Your daily reel limit'),
             const SizedBox(height: 18),
             if (strict) ...[
               AppCard(
@@ -58,68 +56,32 @@ class LimitsScreen extends StatelessWidget {
               const SizedBox(height: 16),
             ],
             AppCard(
+              padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
                   Row(
                     children: [
+                      const IconBadge(icon: Icons.flag_outlined, color: AppColors.sage, size: 40),
+                      const SizedBox(width: 12),
                       const Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             CustomText(text: 'Daily reel limit', fontWeight: FontWeight.w700, fontSize: 14),
-                            CustomText(text: 'Shapes your brain and streak', fontSize: 11, color: AppColors.textMuted),
+                            CustomText(
+                              text: 'Reels pause when you reach it. Feed and messages keep working.',
+                              fontSize: 11,
+                              color: AppColors.textMuted,
+                            ),
                           ],
                         ),
                       ),
                       Switch(value: limit != null, onChanged: locked ? null : (on) => n.setDailyLimit(on ? 100 : null)),
                     ],
                   ),
-                  if (limit != null) ...[
-                    const SizedBox(height: 16),
-                    CustomText(text: '$limit', fontSize: 40, fontWeight: FontWeight.w700, height: 1),
-                    const CustomText(text: 'reels per day', fontSize: 12, color: AppColors.textMuted),
-                    Slider(
-                      value: limit.toDouble(),
-                      min: 10,
-                      max: 500,
-                      divisions: 49,
-                      label: '$limit',
-                      onChanged: locked ? null : (v) => n.setDailyLimit(v.round()),
-                    ),
-                  ],
+                  if (limit != null) _LimitPicker(limit: limit, enabled: !locked, onChanged: n.setDailyLimit),
                 ],
               ),
-            ),
-            const SizedBox(height: 24),
-            AppTileGroup(
-              title: 'Blocking',
-              children: [
-                AppTile(
-                  leading: const IconBadge(icon: Icons.block, color: AppColors.coral),
-                  title: 'Block reels at limit',
-                  subtitle: 'Only reels and shorts. Feed and messages keep working.',
-                  trailing: Switch(value: s.blockingEnabled, onChanged: limit == null || locked ? null : n.setBlocking),
-                ),
-                for (final app in TrackedApp.values)
-                  if (s.trackedApps.contains(app))
-                    AppTile(
-                      enabled: !locked,
-                      leading: IconBadge(icon: app.icon, color: app.color),
-                      title: '${app.label} limit',
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          CustomText(
-                            text: s.perAppLimits[app]?.toString() ?? 'Off',
-                            color: AppColors.textMuted,
-                            fontWeight: FontWeight.w600,
-                          ),
-                          const Icon(Icons.chevron_right, color: AppColors.textMuted),
-                        ],
-                      ),
-                      onTap: () => _editPerApp(context, app, s.perAppLimits[app]),
-                    ),
-              ],
             ),
             const SizedBox(height: 24),
             const Padding(
@@ -149,15 +111,6 @@ class LimitsScreen extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  Future<void> _editPerApp(BuildContext context, TrackedApp app, int? current) async {
-    final result = await showDialog<int?>(
-      context: context,
-      builder: (context) => _PerAppLimitDialog(app: app, current: current),
-    );
-    if (result == null) return;
-    Get.find<SettingsController>().setPerAppLimit(app, result <= 0 ? null : result);
   }
 
   Future<void> _startStrict(BuildContext context) async {
@@ -243,48 +196,124 @@ class _ModeOption extends StatelessWidget {
   }
 }
 
-/// Owns its text controller so it is disposed only after the dialog's exit
-/// animation ends. Disposing it right after `showDialog` returns crashed.
-class _PerAppLimitDialog extends StatefulWidget {
-  const _PerAppLimitDialog({required this.app, required this.current});
+/// Big number with − / + buttons (steps of [_step]) and quick presets.
+class _LimitPicker extends StatelessWidget {
+  const _LimitPicker({required this.limit, required this.enabled, required this.onChanged});
 
-  final TrackedApp app;
-  final int? current;
+  final int limit;
+  final bool enabled;
+  final ValueChanged<int> onChanged;
 
-  @override
-  State<_PerAppLimitDialog> createState() => _PerAppLimitDialogState();
-}
-
-class _PerAppLimitDialogState extends State<_PerAppLimitDialog> {
-  late final _controller = TextEditingController(text: widget.current?.toString() ?? '');
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
+  static const _step = 10;
+  static const _min = 10;
+  static const _max = 500;
+  static const _presets = [30, 50, 100, 200];
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: CustomText(text: '${widget.app.label} daily limit', fontWeight: FontWeight.w700, fontSize: 18),
-      content: CustomTextField(
-        label: 'Reels per day',
-        controller: _controller,
-        autofocus: true,
-        keyboardType: TextInputType.number,
-        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context, -1),
-          child: const CustomText(text: 'Turn off'),
+    void set(int v) => onChanged(v.clamp(_min, _max));
+    return Column(
+      children: [
+        const SizedBox(height: 18),
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(color: AppColors.surfaceHigh, borderRadius: BorderRadius.circular(18)),
+          child: Row(
+            children: [
+              _StepButton(
+                icon: Icons.remove,
+                tooltip: '$_step fewer',
+                onTap: enabled && limit > _min ? () => set(limit - _step) : null,
+              ),
+              Expanded(
+                child: Column(
+                  children: [
+                    CustomText(text: '$limit', fontSize: 30, fontWeight: FontWeight.w700, height: 1.1),
+                    const CustomText(text: 'reels per day', fontSize: 11, color: AppColors.textMuted),
+                  ],
+                ),
+              ),
+              _StepButton(
+                icon: Icons.add,
+                tooltip: '$_step more',
+                onTap: enabled && limit < _max ? () => set(limit + _step) : null,
+              ),
+            ],
+          ),
         ),
-        FilledButton(
-          onPressed: () => Navigator.pop(context, int.tryParse(_controller.text.trim())),
-          child: const CustomText(text: 'Save', fontWeight: FontWeight.w700),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            for (final (i, preset) in _presets.indexed) ...[
+              if (i > 0) const SizedBox(width: 8),
+              Expanded(
+                child: _PresetChip(value: preset, selected: preset == limit, onTap: enabled ? () => set(preset) : null),
+              ),
+            ],
+          ],
         ),
       ],
+    );
+  }
+}
+
+class _StepButton extends StatelessWidget {
+  const _StepButton({required this.icon, required this.tooltip, required this.onTap});
+
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final on = onTap != null;
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(14),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(14),
+          child: SizedBox.square(
+            dimension: 48,
+            child: Icon(icon, color: on ? AppColors.sage : AppColors.textMuted.withValues(alpha: 0.4)),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PresetChip extends StatelessWidget {
+  const _PresetChip({required this.value, required this.selected, required this.onTap});
+
+  final int value;
+  final bool selected;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: selected ? AppColors.sage : AppColors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: selected ? AppColors.sage : AppColors.stroke),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 9),
+          child: CustomText(
+            text: '$value',
+            textAlign: TextAlign.center,
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: selected ? Colors.white : AppColors.textMuted,
+          ),
+        ),
+      ),
     );
   }
 }

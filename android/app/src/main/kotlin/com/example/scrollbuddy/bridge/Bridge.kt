@@ -28,10 +28,10 @@ class Bridge(private val activity: Activity, messenger: BinaryMessenger) {
                     activity.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
                     result.success(null)
                 }
-                "getToday" -> result.success(day(CounterStore.today(), store.todayCounts()))
+                "getToday" -> result.success(day(CounterStore.today()))
                 "getHistory" -> {
                     val days = call.argument<Int>("days") ?: 7
-                    result.success(store.history(days).map { (date, counts) -> day(date, counts) })
+                    result.success(store.history(days).map { (date, _) -> day(date) })
                 }
                 "loadSettings" -> result.success(store.settingsJson())
                 "saveSettings" -> {
@@ -71,12 +71,12 @@ class Bridge(private val activity: Activity, messenger: BinaryMessenger) {
             private var listener: CounterStore.Listener? = null
 
             override fun onListen(arguments: Any?, sink: EventChannel.EventSink) {
-                val l = CounterStore.Listener { counts ->
-                    main.post { sink.success(day(CounterStore.today(), counts)) }
+                val l = CounterStore.Listener { _ ->
+                    main.post { sink.success(day(CounterStore.today())) }
                 }
                 listener = l
                 store.addListener(l)
-                sink.success(day(CounterStore.today(), store.todayCounts()))
+                sink.success(day(CounterStore.today()))
             }
 
             override fun onCancel(arguments: Any?) {
@@ -100,5 +100,7 @@ class Bridge(private val activity: Activity, messenger: BinaryMessenger) {
         return enabled.split(':').any { ComponentName.unflattenFromString(it) == me }
     }
 
-    private fun day(date: String, counts: Map<String, Int>) = mapOf("date" to date, "counts" to counts)
+    /** One day for Flutter: reel counts and seconds in reels, per app. */
+    private fun day(date: String) =
+        mapOf("date" to date, "counts" to store.countsFor(date), "seconds" to store.secondsFor(date))
 }

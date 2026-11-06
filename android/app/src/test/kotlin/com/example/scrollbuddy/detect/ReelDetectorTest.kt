@@ -60,8 +60,8 @@ class ReelDetectorTest {
         val d = ReelDetector(pagerApp)
         d.onEvent(scroll(0, 0))
         assertFalse(d.onEvent(scroll(1000, 1, id = "pkg:id/comments_list")))
-        // Unknown source id (e.g. no view ids) is still accepted.
-        assertTrue(d.onEvent(scroll(2000, 2, id = null)))
+        // No source id: some other list (e.g. a sideways carousel), not the pager.
+        assertFalse(d.onEvent(scroll(2000, 2, id = null)))
     }
 
     @Test
@@ -76,5 +76,20 @@ class ReelDetectorTest {
     fun `non-scroll events never count`() {
         val d = ReelDetector(pagerApp)
         assertFalse(d.onEvent(scroll(0, 5).copy(isScroll = false)))
+    }
+    @Test
+    fun `scrolls without a view id are ignored when the pager is known`() {
+        val d = ReelDetector(pagerApp)
+        assertEquals(0, countAll(d, listOf(scroll(0, 1, id = null), scroll(1_000, 2, id = null))))
+    }
+
+    @Test
+    fun `sideways scrolls never count and keep the reel position`() {
+        val d = ReelDetector(pagerApp)
+        d.onEvent(scroll(0, 3))
+        val sideways = scroll(1_000, 4).copy(horizontal = true)
+        assertEquals(false, d.onEvent(sideways))
+        assertEquals(false, d.onEvent(scroll(2_000, 3))) // still on reel 3
+        assertEquals(true, d.onEvent(scroll(3_000, 4)))
     }
 }

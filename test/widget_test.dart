@@ -4,7 +4,6 @@ import 'package:get/get.dart';
 import 'package:scrollbuddy/app/app.dart';
 import 'package:scrollbuddy/app/dependencies.dart';
 import 'package:scrollbuddy/core/custom_widgets/app_bottom_nav/app_bottom_nav.dart';
-import 'package:scrollbuddy/core/custom_widgets/app_tile/app_tile.dart';
 
 import 'fake_platform_bridge.dart';
 
@@ -76,7 +75,7 @@ void main() {
     await tester.tap(find.text('Continue without tracking'));
     await settle(tester);
 
-    for (final (tab, expected) in [('History', '7 days'), ('Settings', 'Tracking is off')]) {
+    for (final (tab, expected) in [('History', '7 days'), ('Limits', 'Daily reel limit')]) {
       await tester.tap(find.descendant(of: find.byType(AppBottomNav), matching: find.text(tab)));
       await settle(tester);
       expect(find.text(expected), findsOneWidget, reason: tab);
@@ -93,22 +92,20 @@ void main() {
     await tester.tap(find.text('Continue without tracking'));
     await settle(tester);
 
-    await tester.tap(find.byTooltip('Limits'));
+    await tester.tap(find.descendant(of: find.byType(AppBottomNav), matching: find.text('Limits')));
     await settle(tester);
     expect(find.text('Daily reel limit'), findsOneWidget);
     await tester.tap(find.byType(Switch).first);
     await settle(tester);
-    expect(find.text('100'), findsOneWidget);
+    expect(find.text('100'), findsNWidgets(2)); // big number + selected preset
 
-    // Blocking switch works without any purchase.
-    final blocking = find.descendant(
-      of: find.widgetWithText(AppTile, 'Block reels at limit'),
-      matching: find.byType(Switch),
-    );
-    await tester.scrollUntilVisible(blocking, 200);
-    await tester.tap(blocking);
+    // Stepper and presets change the limit.
+    await tester.tap(find.byTooltip('10 more'));
     await settle(tester);
-    expect(tester.widget<Switch>(blocking).value, isTrue);
+    expect(find.text('110'), findsOneWidget);
+    await tester.tap(find.text('50'));
+    await settle(tester);
+    expect(find.text('50'), findsNWidgets(2)); // big number + selected preset
 
     await tester.scrollUntilVisible(find.text('Strict'), 200);
     await tester.ensureVisible(find.text('Strict'));

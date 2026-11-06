@@ -30,7 +30,7 @@ GoRouter createRouter() {
         pageBuilder: (context, state) =>
             _fade(state, OnboardingScreen(startPage: int.tryParse(state.uri.queryParameters['step'] ?? '') ?? 0)),
       ),
-      GoRoute(path: '/limits', builder: (context, state) => const LimitsScreen()),
+      GoRoute(path: '/settings', builder: (context, state) => const SettingsScreen()),
       GoRoute(path: '/block', builder: (context, state) => const BlockScreen()),
       GoRoute(path: '/block-preview', builder: (context, state) => const BlockScreen(preview: true)),
       StatefulShellRoute.indexedStack(
@@ -46,7 +46,7 @@ GoRouter createRouter() {
             routes: [GoRoute(path: '/battles', builder: (context, state) => const BattlesScreen())],
           ),
           StatefulShellBranch(
-            routes: [GoRoute(path: '/settings', builder: (context, state) => const SettingsScreen())],
+            routes: [GoRoute(path: '/limits', builder: (context, state) => const LimitsScreen())],
           ),
         ],
       ),
@@ -62,7 +62,7 @@ class _HomeShell extends StatelessWidget {
   static const _tabs = [
     (AppNavItem(icon: Icons.today_outlined, activeIcon: Icons.today, label: 'Home'), 0),
     (AppNavItem(icon: Icons.bar_chart_outlined, activeIcon: Icons.bar_chart, label: 'History'), 1),
-    (AppNavItem(icon: Icons.settings_outlined, activeIcon: Icons.settings, label: 'Settings'), 3),
+    (AppNavItem(icon: Icons.timer_outlined, activeIcon: Icons.timer, label: 'Limits'), 3),
   ];
 
   @override

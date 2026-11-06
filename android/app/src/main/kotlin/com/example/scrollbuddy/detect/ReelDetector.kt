@@ -8,7 +8,10 @@ data class AppSelectors(
     val viewerIds: List<String>,
     /** Substrings of content descriptions that mean the same (checked in memory only, never stored). */
     val viewerDescriptions: List<String> = emptyList(),
-    /** Substrings of the pager's view ID. Empty = accept scroll events from any source. */
+    /**
+     * Substrings of the pager's view ID. When set, only scroll events from that pager count
+     * (events without an ID come from other lists, e.g. sideways carousels). Empty = any source.
+     */
     val pagerIds: List<String> = emptyList(),
     /** Ignore a second count within this many ms (fast flings, event storms). */
     val minGapMs: Long = 400,
@@ -29,6 +32,8 @@ data class EventSnapshot(
     val toIndex: Int,
     val inViewer: Boolean,
     val timeMs: Long,
+    /** The scroll moved more sideways than up/down (carousels, tab swipes). */
+    val horizontal: Boolean = false,
 )
 
 /**
@@ -36,6 +41,7 @@ data class EventSnapshot(
  *
  * Rules (basic version, plan.md §8.2):
  * - Outside the reels viewer nothing counts, and the current position is forgotten.
+ * - Sideways scrolls and scrolls from other lists never count (reels are swiped up/down).
  * - With item indexes: count when the index changes. The first index seen is a baseline;
  *   it counts only if it is past the first item (the user already swiped).
  * - Without indexes: count one scroll burst per [AppSelectors.fallbackGapMs].
@@ -49,9 +55,9 @@ class ReelDetector(private val app: AppSelectors) {
             lastIndex = NO_INDEX
             return false
         }
-        if (!e.isScroll) return false
+        if (!e.isScroll || e.horizontal) return false
         val id = e.sourceViewId
-        if (app.pagerIds.isNotEmpty() && id != null && app.pagerIds.none { id.contains(it) }) return false
+        if (app.pagerIds.isNotEmpty() && (id == null || app.pagerIds.none { id.contains(it) })) return false
 
         val index = if (e.toIndex >= 0) e.toIndex else e.fromIndex
         if (index >= 0) {

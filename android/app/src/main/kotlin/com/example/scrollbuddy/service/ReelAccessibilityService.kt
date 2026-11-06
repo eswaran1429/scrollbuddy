@@ -6,6 +6,7 @@ import android.content.pm.ApplicationInfo
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.os.PowerManager
 import android.os.SystemClock
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
@@ -15,6 +16,7 @@ import com.example.scrollbuddy.detect.AppSelectors
 import com.example.scrollbuddy.detect.EventSnapshot
 import com.example.scrollbuddy.detect.ReelDetector
 import com.example.scrollbuddy.detect.Selectors
+import com.example.scrollbuddy.detect.WatchTimer
 import com.example.scrollbuddy.overlay.CountBubble
 import com.example.scrollbuddy.store.CounterStore
 
@@ -34,12 +36,19 @@ class ReelAccessibilityService : AccessibilityService() {
     private val main = Handler(Looper.getMainLooper())
 
     // Events only arrive from the four apps, so leaving them (home, other app) sends nothing.
-    // While the bubble is visible, poll the active window once a second: hide it when another
-    // app is in front, the window is gone twice in a row, or the reels viewer is no longer on screen.
+    // While in a reels viewer, check once a second: add watch time, and leave the viewer when the
+    // screen is off, another app is in front, the window is gone twice in a row, or the viewer closed.
+    private val timer = WatchTimer()
+    private var watching = false
     private var missedWindows = 0
-    private val leaveCheck = object : Runnable {
+    private val viewerWatch = object : Runnable {
         override fun run() {
-            if (!bubble.isShown) return
+            if (!inViewer) return syncWatch()
+            if (!getSystemService(PowerManager::class.java).isInteractive) {
+                inViewer = false
+                bubble.hide()
+                return syncWatch()
+            }
             val root = rootInActiveWindow
             val pkg = root?.packageName?.toString()
             val app = if (pkg != null && pkg == currentPackage) Selectors.byPackage[pkg] else null
@@ -56,10 +65,32 @@ class ReelAccessibilityService : AccessibilityService() {
                 if (pkg != currentPackage) currentPackage = null
                 inViewer = false
                 bubble.hide()
+                syncWatch()
             } else {
+                currentPackage?.let { key -> Selectors.byPackage[key]?.let { saveTime(timer.tick(it.key, SystemClock.uptimeMillis())) } }
                 main.postDelayed(this, LEAVE_CHECK_MS)
             }
         }
+    }
+
+    /** Starts or stops the once-a-second viewer watch to match [inViewer]. */
+    private fun syncWatch(now: Long = SystemClock.uptimeMillis()) {
+        val app = currentPackage?.let { Selectors.byPackage[it] }
+        if (inViewer && app != null) {
+            saveTime(timer.tick(app.key, now))
+            if (!watching) {
+                watching = true
+                main.postDelayed(viewerWatch, LEAVE_CHECK_MS)
+            }
+        } else {
+            saveTime(timer.stop(now))
+            watching = false
+            main.removeCallbacks(viewerWatch)
+        }
+    }
+
+    private fun saveTime(entry: Pair<String, Int>?) {
+        entry?.let { (key, seconds) -> store.addSeconds(key, seconds) }
     }
 
     // Debug builds log event metadata (types, view IDs, indexes; never text) to logcat tag "ScrollBuddy".
@@ -72,7 +103,8 @@ class ReelAccessibilityService : AccessibilityService() {
     }
 
     override fun onUnbind(intent: android.content.Intent?): Boolean {
-        main.removeCallbacks(leaveCheck)
+        inViewer = false
+        if (::store.isInitialized) syncWatch()
         if (::bubble.isInitialized) bubble.hide()
         return super.onUnbind(intent)
     }
@@ -98,6 +130,7 @@ class ReelAccessibilityService : AccessibilityService() {
             if (debugLog && was != inViewer) Log.d(TAG, "${app.key} inViewer=$inViewer")
             lastViewerCheck = now
             updateBubble()
+            syncWatch(now)
             if (inViewer) maybeBlock(app.key, now)
         }
 
@@ -115,17 +148,20 @@ class ReelAccessibilityService : AccessibilityService() {
             toIndex = event.toIndex,
             inViewer = inViewer,
             timeMs = now,
+            horizontal = isScroll && isHorizontal(event),
         )
         if (debugLog && (isScroll || event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED)) {
             Log.d(
                 TAG,
                 "${app.key} type=${AccessibilityEvent.eventTypeToString(event.eventType)} src=$sourceId " +
                     "class=${event.className} from=${event.fromIndex} to=${event.toIndex} items=${event.itemCount} " +
+                    "horizontal=${snapshot.horizontal} " +
                     "inViewer=$inViewer",
             )
         }
         if (detectors.getOrPut(app.key) { ReelDetector(app) }.onEvent(snapshot)) {
             store.increment(app.key)
+            updateBubble() // may appear now that the "show after" count is reached
             bubble.update(store.todayTotal())
             maybeBlock(app.key, now)
         }
@@ -150,7 +186,7 @@ class ReelAccessibilityService : AccessibilityService() {
         if (index < 0) return
         val snapshot = EventSnapshot(
             isScroll = true,
-            sourceViewId = null,
+            sourceViewId = app.pagerIds.firstOrNull(), // the probe only reads the reels pager
             fromIndex = index,
             toIndex = index,
             inViewer = true,
@@ -158,6 +194,7 @@ class ReelAccessibilityService : AccessibilityService() {
         )
         if (detector.onEvent(snapshot)) {
             store.increment(app.key)
+            updateBubble() // may appear now that the "show after" count is reached
             bubble.update(store.todayTotal())
             maybeBlock(app.key, now)
         }
@@ -189,6 +226,14 @@ class ReelAccessibilityService : AccessibilityService() {
         return result
     }
 
+    /** Android 9+ reports scroll deltas; older versions count as vertical. */
+    private fun isHorizontal(event: AccessibilityEvent): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) return false
+        val dx = kotlin.math.abs(event.scrollDeltaX)
+        val dy = kotlin.math.abs(event.scrollDeltaY)
+        return dx > 0 && dx > dy
+    }
+
     private var lastBlock = 0L
 
     /**
@@ -197,11 +242,12 @@ class ReelAccessibilityService : AccessibilityService() {
      */
     private fun maybeBlock(appKey: String, now: Long) {
         if (now - lastBlock < BLOCK_COOLDOWN_MS) return
-        if (!store.limits().reached(store.todayCounts(), appKey, store.bonusToday())) return
+        if (!store.limits().reached(store.todayCounts(), store.bonusToday())) return
         lastBlock = now
         if (debugLog) Log.d(TAG, "$appKey limit reached, blocking")
         inViewer = false
         bubble.hide()
+        syncWatch(now)
         performGlobalAction(GLOBAL_ACTION_BACK)
         main.postDelayed({
             startActivity(
@@ -213,18 +259,16 @@ class ReelAccessibilityService : AccessibilityService() {
     }
 
     private fun updateBubble() {
-        if (inViewer && store.showOverlay()) {
-            if (!bubble.isShown) {
-                bubble.show(store.todayTotal())
-                main.removeCallbacks(leaveCheck)
-                main.postDelayed(leaveCheck, LEAVE_CHECK_MS)
-            }
+        if (inViewer && store.showOverlay() && store.todayTotal() >= store.overlayAfter()) {
+            if (!bubble.isShown) bubble.show(store.todayTotal())
         } else {
             bubble.hide()
         }
     }
 
     override fun onInterrupt() {
+        inViewer = false
+        if (::store.isInitialized) syncWatch()
         if (::bubble.isInitialized) bubble.hide()
     }
 
