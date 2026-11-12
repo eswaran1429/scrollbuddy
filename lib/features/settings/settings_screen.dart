@@ -64,7 +64,7 @@ class SettingsScreen extends StatelessWidget {
                     ),
                   ),
                   if (trackingOn)
-                    const StatusPill(
+                    StatusPill(
                       text: 'Active',
                       icon: Icons.check_circle,
                       color: AppColors.sage,
@@ -89,6 +89,39 @@ class SettingsScreen extends StatelessWidget {
             AppTileGroup(
               title: 'Display',
               children: [
+                Column(
+                  children: [
+                    AppTile(
+                      leading: IconBadge(
+                        icon: AppColors.isDark ? Icons.dark_mode_outlined : Icons.light_mode_outlined,
+                        color: AppColors.lavender,
+                      ),
+                      title: 'Theme',
+                      subtitle: 'Light, dark or match your phone',
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+                      child: Row(
+                        children: [
+                          for (final (i, (mode, label)) in const [
+                            (ThemeMode.system, 'System'),
+                            (ThemeMode.light, 'Light'),
+                            (ThemeMode.dark, 'Dark'),
+                          ].indexed) ...[
+                            if (i > 0) const SizedBox(width: 6),
+                            Expanded(
+                              child: _Chip(
+                                label: label,
+                                selected: s.themeMode == mode,
+                                onTap: () => n.setThemeMode(mode),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
                 AppTile(
                   leading: const IconBadge(icon: Icons.bubble_chart_outlined, color: AppColors.lavender),
                   title: 'Floating counter',
@@ -96,11 +129,6 @@ class SettingsScreen extends StatelessWidget {
                   trailing: Switch(value: s.showOverlay, onChanged: n.setShowOverlay),
                 ),
                 if (s.showOverlay) _OverlayAfterPicker(value: s.overlayAfter, onChanged: n.setOverlayAfter),
-                AppTile(
-                  leading: const IconBadge(icon: Icons.motion_photos_off_outlined, color: AppColors.info),
-                  title: 'Reduce motion',
-                  trailing: Switch(value: s.reducedMotion, onChanged: n.setReducedMotion),
-                ),
               ],
             ),
             const SizedBox(height: 22),
@@ -108,7 +136,7 @@ class SettingsScreen extends StatelessWidget {
               title: 'Your data',
               children: [
                 AppTile(
-                  leading: const IconBadge(icon: Icons.restart_alt, color: AppColors.textMuted),
+                  leading: IconBadge(icon: Icons.restart_alt, color: AppColors.textMuted),
                   title: "Reset today's count",
                   onTap: () async {
                     if (await _confirm(context, "Reset today's count?", 'Today goes back to 0.')) {
@@ -163,7 +191,7 @@ class SettingsScreen extends StatelessWidget {
             //   ],
             // ),
             // const SizedBox(height: 20),
-            const CustomText(
+            CustomText(
               text: 'ScrollBuddy 1.0.0',
               textAlign: TextAlign.center,
               fontSize: 12,
@@ -204,7 +232,7 @@ class _OverlayAfterPicker extends StatelessWidget {
   final int value;
   final ValueChanged<int> onChanged;
 
-  static const _options = [0, 10, 25, 50];
+  static const _options = [0, 50, 100];
 
   Future<void> _custom(BuildContext context) async {
     final n = await showDialog<int>(

@@ -237,7 +237,7 @@ class _IntroPage extends StatelessWidget {
             child: Stack(
               alignment: Alignment.center,
               children: [
-                const SoftBlob(size: 210, color: AppColors.sageSoft),
+                SoftBlob(size: 210, color: AppColors.sageSoft),
                 const BrainView(count: 0, reducedMotion: true, size: 170, showLabel: false),
                 for (final (i, app) in apps.indexed)
                   Align(
@@ -313,7 +313,7 @@ class _DisclosurePage extends StatelessWidget {
     return _Page(
       top: const _IconTile(Icons.accessibility_new),
       title: 'How ScrollBuddy uses Accessibility',
-      content: const [
+      content: [
         AppCard(
           child: CustomText(text: disclosureText, fontSize: 13, height: 1.6, color: AppColors.textMuted),
         ),
@@ -449,7 +449,7 @@ class _AccessibilityPage extends StatelessWidget {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      builder: (context) => const SafeArea(
+      builder: (context) => SafeArea(
         child: Padding(
           padding: EdgeInsets.fromLTRB(20, 0, 20, 20),
           child: Column(
@@ -496,7 +496,7 @@ class _AccessibilityPage extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(18, 16, 14, 16),
             child: Row(
               children: [
-                const Expanded(
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -536,7 +536,7 @@ class _AccessibilityPage extends StatelessWidget {
             radius: 999,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             onTap: () => _showWhy(context),
-            child: const Row(
+            child: Row(
               children: [
                 Icon(Icons.verified_user_outlined, color: AppColors.sage),
                 SizedBox(width: 12),
@@ -585,7 +585,7 @@ class _NotificationsPage extends StatelessWidget {
                 child: const Icon(Icons.psychology, color: Colors.white, size: 22),
               ),
               const SizedBox(width: 12),
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [

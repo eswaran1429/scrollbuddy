@@ -14,7 +14,7 @@ class AppLogo extends StatelessWidget {
       width: size,
       height: size,
       padding: EdgeInsets.all(size * 0.08),
-      decoration: const BoxDecoration(color: AppColors.lavenderSoft, shape: BoxShape.circle),
+      decoration: BoxDecoration(color: AppColors.lavenderSoft, shape: BoxShape.circle),
       child: Image.asset('assets/images/logo_mark.png', semanticLabel: 'ScrollBuddy logo'),
     );
   }

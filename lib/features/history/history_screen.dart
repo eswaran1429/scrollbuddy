@@ -1,4 +1,3 @@
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:scrollbuddy/core/custom_widgets/app_card/app_card.dart';
@@ -13,6 +12,7 @@ import '../../core/history_stats.dart';
 import '../../core/models.dart';
 import '../../data/counts_controller.dart';
 import '../../data/settings.dart';
+import 'day_charts.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -141,29 +141,26 @@ class _HistoryBody extends StatelessWidget {
         ),
         const SizedBox(height: 10),
         AppCard(
-          padding: const EdgeInsets.fromLTRB(10, 16, 16, 8),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Padding(
-                padding: const EdgeInsets.only(left: 8),
-                child: Row(
-                  children: [
-                    const SectionLabel('Reels per day'),
-                    const Spacer(),
-                    if (limit != null) ...[
-                      Container(width: 12, height: 2, color: AppColors.coral),
-                      const SizedBox(width: 6),
-                      CustomText(text: 'limit $limit', fontSize: 11, color: AppColors.textMuted),
-                    ],
+              Row(
+                children: [
+                  const SectionLabel('Reels per day' ),
+                  const Spacer(),
+                  if (limit != null && days.length <= 7) ...[
+                    Container(width: 12, height: 2, color: AppColors.coral),
+                    const SizedBox(width: 6),
+                    CustomText(text: 'limit $limit', fontSize: 11, color: AppColors.textMuted),
                   ],
-                ),
+                ],
               ),
               const SizedBox(height: 16),
-              SizedBox(
-                height: 170,
-                child: _Chart(days: days, limit: limit),
-              ),
+              if (days.length <= 7)
+                DayBars(key: const ValueKey('bars'), days: days, limit: limit)
+              else
+                DayHeatmap(key: const ValueKey('heatmap'), days: days, limit: limit),
             ],
           ),
         ),
@@ -242,114 +239,6 @@ class _StatTile extends StatelessWidget {
             ],
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _Chart extends StatelessWidget {
-  const _Chart({required this.days, required this.limit});
-
-  final List<DayCounts> days;
-  final int? limit;
-
-  @override
-  Widget build(BuildContext context) {
-    final short = days.length <= 7;
-    const muted = TextStyle(fontSize: 11, color: AppColors.textMuted, fontFamily: CustomText.fontFamily);
-    return LineChart(
-      LineChartData(
-        minY: 0,
-        gridData: FlGridData(
-          drawVerticalLine: false,
-          getDrawingHorizontalLine: (_) => const FlLine(color: AppColors.stroke, strokeWidth: 1),
-        ),
-        borderData: FlBorderData(show: false),
-        lineTouchData: LineTouchData(
-          touchTooltipData: LineTouchTooltipData(
-            getTooltipColor: (_) => AppColors.textPrimary,
-            getTooltipItems: (spots) => [
-              for (final s in spots)
-                LineTooltipItem(
-                  '${s.y.toInt()} reels\n${shortDate(days[s.x.toInt()].date)}',
-                  const TextStyle(color: Colors.white, fontFamily: CustomText.fontFamily, fontSize: 12),
-                ),
-            ],
-          ),
-        ),
-        lineBarsData: [
-          LineChartBarData(
-            spots: [for (final (i, d) in days.indexed) FlSpot(i.toDouble(), d.total.toDouble())],
-            isCurved: true,
-            preventCurveOverShooting: true,
-            color: AppColors.sage,
-            barWidth: 3,
-            isStrokeCapRound: true,
-            dotData: FlDotData(
-              show: short,
-              getDotPainter: (spot, _, _, i) => FlDotCirclePainter(
-                radius: i == days.length - 1 ? 5 : 3.5,
-                color: Colors.white,
-                strokeWidth: 2.5,
-                strokeColor: limit != null && spot.y > limit! ? AppColors.coral : AppColors.sage,
-              ),
-            ),
-            belowBarData: BarAreaData(
-              show: true,
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [AppColors.sage.withValues(alpha: 0.25), AppColors.sage.withValues(alpha: 0)],
-              ),
-            ),
-          ),
-        ],
-        extraLinesData: ExtraLinesData(
-          horizontalLines: [
-            if (limit != null)
-              HorizontalLine(y: limit!.toDouble(), color: AppColors.coral, strokeWidth: 1.5, dashArray: const [5, 4]),
-          ],
-        ),
-        titlesData: FlTitlesData(
-          topTitles: const AxisTitles(),
-          // Empty right gutter so the "Today" label is not clipped.
-          rightTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              reservedSize: 16,
-              getTitlesWidget: (_, _) => const SizedBox.shrink(),
-            ),
-          ),
-          leftTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              reservedSize: 34,
-              getTitlesWidget: (value, meta) => value == meta.max && value % meta.appliedInterval != 0
-                  ? const SizedBox.shrink()
-                  : Text(meta.formattedValue, style: muted),
-            ),
-          ),
-          bottomTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              interval: 1,
-              getTitlesWidget: (value, meta) {
-                final i = value.toInt();
-                if (i < 0 || i >= days.length || value != i) return const SizedBox.shrink();
-                final d = days[i].date;
-                if (!short && i % 5 != 4 && i != days.length - 1) return const SizedBox.shrink();
-                final isToday = i == days.length - 1;
-                return Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: Text(
-                    isToday ? 'Today' : (short ? weekdayLetter(d) : '${d.day}'),
-                    style: isToday ? muted.copyWith(color: AppColors.sage, fontWeight: FontWeight.w600) : muted,
-                  ),
-                );
-              },
-            ),
-          ),
-        ),
       ),
     );
   }

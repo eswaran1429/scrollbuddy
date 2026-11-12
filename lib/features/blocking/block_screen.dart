@@ -140,7 +140,7 @@ class _BlockScreenState extends State<BlockScreen> {
                         const SizedBox(height: 4),
                         CustomText(text: '$count reels today', fontSize: 16, color: AppColors.sage),
                         const SizedBox(height: 12),
-                        const CustomText(
+                        CustomText(
                           text: 'Take a breath. Your feed and messages still work. Only reels are paused.',
                           color: AppColors.textMuted,
                         ),
@@ -210,7 +210,7 @@ class _BlockScreenState extends State<BlockScreen> {
       case UnlockMode.task:
         final ok = _phrase.text.trim().toLowerCase() == BlockScreen.unlockPhrase.toLowerCase();
         return [
-          const CustomText(text: 'Type this to unlock', color: AppColors.textMuted),
+          CustomText(text: 'Type this to unlock', color: AppColors.textMuted),
           const SizedBox(height: 6),
           const CustomText(text: '"${BlockScreen.unlockPhrase}"', fontWeight: FontWeight.w700, fontSize: 16),
           const SizedBox(height: 16),

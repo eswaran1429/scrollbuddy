@@ -73,6 +73,10 @@ flutter:
   # Only the small logo crop is bundled. Never add assets/sample/ (D-21).
   assets:
     - assets/images/logo_mark.png
+    - assets/images/healthy.png
+    - assets/images/tired.png
+    - assets/images/cracking.png
+    - assets/images/fried.png
 
   # To add assets to your application, add an assets section, like this:
   # assets:

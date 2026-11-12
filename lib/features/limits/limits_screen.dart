@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
 import 'package:scrollbuddy/core/custom_widgets/app_button/app_button.dart';
@@ -21,7 +22,7 @@ class LimitsScreen extends StatelessWidget {
     final s = Get.find<SettingsController>().settings.value;
     final n = Get.find<SettingsController>();
     final strict = s.strictActive(DateTime.now());
-    final locked = strict; // no changes during strict mode
+    final locked = strict;
     final limit = s.dailyLimit;
 
     return Scaffold(
@@ -63,7 +64,7 @@ class LimitsScreen extends StatelessWidget {
                     children: [
                       const IconBadge(icon: Icons.flag_outlined, color: AppColors.sage, size: 40),
                       const SizedBox(width: 12),
-                      const Expanded(
+                      Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -127,7 +128,7 @@ class LimitsScreen extends StatelessWidget {
             children: [
               const CustomText(text: 'Start strict mode?', fontSize: 20, fontWeight: FontWeight.w700),
               const SizedBox(height: 8),
-              const CustomText(
+              CustomText(
                 text: 'You will not be able to unlock reels or change limits in ScrollBuddy until the timer ends.',
                 color: AppColors.textMuted,
               ),
@@ -196,7 +197,6 @@ class _ModeOption extends StatelessWidget {
   }
 }
 
-/// Big number with − / + buttons (steps of [_step]) and quick presets.
 class _LimitPicker extends StatelessWidget {
   const _LimitPicker({required this.limit, required this.enabled, required this.onChanged});
 
@@ -206,12 +206,21 @@ class _LimitPicker extends StatelessWidget {
 
   static const _step = 10;
   static const _min = 10;
-  static const _max = 500;
-  static const _presets = [30, 50, 100, 200];
+  static const _max = 999;
+  static const _presets = [100, 200];
+
+  Future<void> _pickCustom(BuildContext context) async {
+    final v = await showDialog<int>(
+      context: context,
+      builder: (_) => _CustomLimitDialog(initial: limit, min: 1, max: _max),
+    );
+    if (v != null) onChanged(v);
+  }
 
   @override
   Widget build(BuildContext context) {
     void set(int v) => onChanged(v.clamp(_min, _max));
+    final custom = !_presets.contains(limit);
     return Column(
       children: [
         const SizedBox(height: 18),
@@ -226,11 +235,15 @@ class _LimitPicker extends StatelessWidget {
                 onTap: enabled && limit > _min ? () => set(limit - _step) : null,
               ),
               Expanded(
-                child: Column(
-                  children: [
-                    CustomText(text: '$limit', fontSize: 30, fontWeight: FontWeight.w700, height: 1.1),
-                    const CustomText(text: 'reels per day', fontSize: 11, color: AppColors.textMuted),
-                  ],
+                child: InkWell(
+                  onTap: enabled ? () => _pickCustom(context) : null,
+                  borderRadius: BorderRadius.circular(12),
+                  child: Column(
+                    children: [
+                      CustomText(text: '$limit', fontSize: 30, fontWeight: FontWeight.w700, height: 1.1),
+                      CustomText(text: 'reels per day', fontSize: 11, color: AppColors.textMuted),
+                    ],
+                  ),
                 ),
               ),
               _StepButton(
@@ -247,11 +260,69 @@ class _LimitPicker extends StatelessWidget {
             for (final (i, preset) in _presets.indexed) ...[
               if (i > 0) const SizedBox(width: 8),
               Expanded(
-                child: _PresetChip(value: preset, selected: preset == limit, onTap: enabled ? () => set(preset) : null),
+                child: _PresetChip(
+                  label: '$preset',
+                  selected: preset == limit,
+                  onTap: enabled ? () => set(preset) : null,
+                ),
               ),
             ],
+            const SizedBox(width: 8),
+            Expanded(
+              child: _PresetChip(label: 'Custom', selected: custom, onTap: enabled ? () => _pickCustom(context) : null),
+            ),
           ],
         ),
+      ],
+    );
+  }
+}
+
+class _CustomLimitDialog extends StatefulWidget {
+  const _CustomLimitDialog({required this.initial, required this.min, required this.max});
+
+  final int initial;
+  final int min;
+  final int max;
+
+  @override
+  State<_CustomLimitDialog> createState() => _CustomLimitDialogState();
+}
+
+class _CustomLimitDialogState extends State<_CustomLimitDialog> {
+  late final _ctrl = TextEditingController(text: '${widget.initial}');
+  String? _error;
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    final v = int.tryParse(_ctrl.text.trim());
+    if (v == null || v < widget.min || v > widget.max) {
+      setState(() => _error = 'Enter ${widget.min}–${widget.max}');
+      return;
+    }
+    Navigator.pop(context, v);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const CustomText(text: 'Custom limit', fontSize: 18, fontWeight: FontWeight.w700),
+      content: TextField(
+        controller: _ctrl,
+        autofocus: true,
+        keyboardType: TextInputType.number,
+        inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(3)],
+        decoration: InputDecoration(suffixText: 'reels per day', errorText: _error),
+        onSubmitted: (_) => _submit(),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+        TextButton(onPressed: _submit, child: const Text('Set')),
       ],
     );
   }
@@ -286,9 +357,9 @@ class _StepButton extends StatelessWidget {
 }
 
 class _PresetChip extends StatelessWidget {
-  const _PresetChip({required this.value, required this.selected, required this.onTap});
+  const _PresetChip({required this.label, required this.selected, required this.onTap});
 
-  final int value;
+  final String label;
   final bool selected;
   final VoidCallback? onTap;
 
@@ -306,7 +377,7 @@ class _PresetChip extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 9),
           child: CustomText(
-            text: '$value',
+            text: label,
             textAlign: TextAlign.center,
             fontSize: 13,
             fontWeight: FontWeight.w600,

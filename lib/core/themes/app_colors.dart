@@ -91,18 +91,25 @@ class AppColors {
 
   static final Color snackBackGroundColor = Colors.black.withValues(alpha: 0.1);
 
-  // ScrollBuddy "calm light" UI (D-23)
-  static const Color bg = Color(0xFFF7F8FA);
-  static const Color surface = Colors.white;
-  static const Color surfaceHigh = Color(0xFFEEF1F4);
-  static const Color stroke = Color(0xFFE5E7EB);
-  static const Color textPrimary = Color(0xFF191C1E);
-  static const Color textMuted = Color(0xFF6B7280);
+  /// Set by the app root before each build. Theme-aware colors below read it.
+  static bool isDark = false;
+
+  static Color get bg => isDark ? const Color(0xFF13111C) : const Color(0xFFF7F8FA);
+  static Color get surface => isDark ? const Color(0xFF1E1B2B) : Colors.white;
+  static Color get surfaceHigh => isDark ? const Color(0xFF2A2639) : const Color(0xFFEEF1F4);
+  static Color get stroke => isDark ? const Color(0xFF332F44) : const Color(0xFFE5E7EB);
+  static Color get textPrimary => isDark ? const Color(0xFFF1EFF8) : const Color(0xFF191C1E);
+  static Color get textMuted => isDark ? const Color(0xFF9A96AE) : const Color(0xFF6B7280);
+
+  /// Text on a [textPrimary] background (tooltips, snackbars).
+  static Color get onInverse => isDark ? const Color(0xFF13111C) : Colors.white;
 
   static const Color sage = Color(0xFF4F8F77);
-  static const Color sageSoft = Color(0xFFE3F0EA);
+  static Color get sageSoft => isDark ? const Color(0xFF1E3A30) : const Color(0xFFE3F0EA);
   static const Color lavender = Color(0xFF7C6CD6);
-  static const Color lavenderSoft = Color(0xFFEEEAFB);
-  static const Color peachSoft = Color(0xFFFFEDE3);
+  static Color get lavenderSoft => isDark ? const Color(0xFF2C2650) : const Color(0xFFEEEAFB);
+  static Color get peachSoft => isDark ? const Color(0xFF3D2420) : const Color(0xFFFFEDE3);
   static const Color coral = Color(0xFFE0654F);
+  static const Color amber = Color(0xFFF5A524);
+  static const Color lilac = Color(0xFFC59BFF);
 }

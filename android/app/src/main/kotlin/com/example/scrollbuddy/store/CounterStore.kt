@@ -202,12 +202,15 @@ class CounterStore private constructor(context: Context) :
         }
 
     fun addBonus(reels: Int) {
+        val limit = limits().dailyLimit
+        val over = if (limit == null) 0 else todayTotal() - limit
+        val next = maxOf(bonusToday(), over) + reels
         writableDatabase.insertWithOnConflict(
             "settings",
             null,
             ContentValues().apply {
                 put("key", bonusKey())
-                put("value", (bonusToday() + reels).toString())
+                put("value", next.toString())
             },
             SQLiteDatabase.CONFLICT_REPLACE,
         )

@@ -65,13 +65,13 @@ class BattlesScreen extends StatelessWidget {
                 AppIconButton(icon: Icons.person_add_alt, tooltip: 'Add friend', onPressed: () => _addFriend(context)),
               ],
             ),
-            const CustomText(text: 'Fewest reels wins the day', color: AppColors.textMuted),
+            CustomText(text: 'Fewest reels wins the day', color: AppColors.textMuted),
             const SizedBox(height: 20),
             AppCard(
               color: AppColors.lavenderSoft,
               child: Row(
                 children: [
-                  const Expanded(
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -129,7 +129,7 @@ class BattlesScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const CustomText(text: 'Yesterday', fontSize: 12, color: AppColors.textMuted),
+                        CustomText(text: 'Yesterday', fontSize: 12, color: AppColors.textMuted),
                         CustomText(
                           text: '${winner.isMe ? 'You' : winner.name} won with ${winner.count} reels',
                           fontWeight: FontWeight.w700,
@@ -164,7 +164,7 @@ class BattlesScreen extends StatelessWidget {
                                 color: AppColors.surfaceHigh,
                                 borderRadius: BorderRadius.circular(999),
                               ),
-                              child: const CustomText(text: 'Pending', fontSize: 12, color: AppColors.textMuted),
+                              child: CustomText(text: 'Pending', fontSize: 12, color: AppColors.textMuted),
                             ),
                           ],
                         ),
@@ -174,7 +174,7 @@ class BattlesScreen extends StatelessWidget {
               ),
             ],
             const SizedBox(height: 20),
-            const CustomText(
+            CustomText(
               text: 'Only your daily total is shared with friends. Never what you watched.',
               textAlign: TextAlign.center,
               fontSize: 12,

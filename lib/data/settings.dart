@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart' show ThemeMode;
 import 'package:get/get.dart';
 
 import '../core/models.dart';
@@ -29,6 +30,7 @@ class AppSettings {
     this.onboardingDone = false,
     this.showOverlay = true,
     this.overlayAfter = 0,
+    this.themeMode = ThemeMode.system,
   });
 
   final int? dailyLimit;
@@ -44,6 +46,8 @@ class AppSettings {
   /// The floating counter appears once today's total reaches this. 0 = from the first reel.
   final int overlayAfter;
 
+  final ThemeMode themeMode;
+
   bool strictActive(DateTime now) => strictUntil != null && now.isBefore(strictUntil!);
 
   AppSettings copyWith({
@@ -55,6 +59,7 @@ class AppSettings {
     bool? onboardingDone,
     bool? showOverlay,
     int? overlayAfter,
+    ThemeMode? themeMode,
   }) => AppSettings(
     dailyLimit: dailyLimit != null ? dailyLimit() : this.dailyLimit,
     unlockMode: unlockMode ?? this.unlockMode,
@@ -64,6 +69,7 @@ class AppSettings {
     onboardingDone: onboardingDone ?? this.onboardingDone,
     showOverlay: showOverlay ?? this.showOverlay,
     overlayAfter: overlayAfter ?? this.overlayAfter,
+    themeMode: themeMode ?? this.themeMode,
   );
 
   Map<String, dynamic> toJson() => {
@@ -75,6 +81,7 @@ class AppSettings {
     'onboardingDone': onboardingDone,
     'showOverlay': showOverlay,
     'overlayAfter': overlayAfter,
+    'themeMode': themeMode.name,
   };
 
   /// Missing or unknown values fall back to defaults.
@@ -91,6 +98,7 @@ class AppSettings {
       onboardingDone: j['onboardingDone'] as bool? ?? false,
       showOverlay: j['showOverlay'] as bool? ?? true,
       overlayAfter: j['overlayAfter'] as int? ?? 0,
+      themeMode: ThemeMode.values.asNameMap()[j['themeMode']] ?? ThemeMode.system,
     );
   }
 }
@@ -126,12 +134,11 @@ class SettingsController extends GetxController {
   void setTracked(TrackedApp app, bool on) =>
       _s = _s.copyWith(trackedApps: on ? {..._s.trackedApps, app} : ({..._s.trackedApps}..remove(app)));
 
-  void setReducedMotion(bool on) => _s = _s.copyWith(reducedMotion: on);
-
   void setShowOverlay(bool on) => _s = _s.copyWith(showOverlay: on);
 
   void setOverlayAfter(int reels) => _s = _s.copyWith(overlayAfter: reels);
 
-  /// Back to defaults after "Delete all data". Onboarding stays done.
-  void reset() => _s = const AppSettings(onboardingDone: true);
+  void setThemeMode(ThemeMode mode) => _s = _s.copyWith(themeMode: mode);
+
+  void reset() => _s = AppSettings(onboardingDone: true, themeMode: _s.themeMode);
 }

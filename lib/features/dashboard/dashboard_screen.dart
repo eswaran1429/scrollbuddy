@@ -7,17 +7,18 @@ import 'package:go_router/go_router.dart';
 import 'package:scrollbuddy/core/custom_widgets/app_button/app_button.dart';
 import 'package:scrollbuddy/core/custom_widgets/app_card/app_card.dart';
 import 'package:scrollbuddy/core/custom_widgets/app_tile/app_tile.dart';
-import 'package:scrollbuddy/core/custom_widgets/blob/soft_blob.dart';
+import 'package:scrollbuddy/core/themes/app_tokens.dart';
 import 'package:scrollbuddy/core/custom_widgets/custom_text/custom_text.dart';
 import 'package:scrollbuddy/core/custom_widgets/page_header/page_header.dart';
 import 'package:scrollbuddy/core/themes/app_colors.dart';
 
 import '../../core/brain_state.dart';
+import '../../core/brain_state_colors.dart';
 import '../../core/format.dart';
 import '../../core/models.dart';
 import '../../data/counts_controller.dart';
 import '../../data/settings.dart';
-import 'brain_view.dart';
+import 'mascot_view.dart';
 
 /// Count at which the ring is full when no limit is set (start of "fried").
 const _ringFullAt = 200;
@@ -37,13 +38,6 @@ String _mood(int count, BrainState state) => count == 0
         BrainState.fried => 'Your brain needs a rest',
       };
 
-/// Blob tint per state: calm green → lavender → peach.
-Color _blobColor(BrainState s) => switch (s) {
-  BrainState.healthy => AppColors.sageSoft,
-  BrainState.tired => AppColors.lavenderSoft,
-  BrainState.cracking || BrainState.fried => AppColors.peachSoft,
-};
-
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
 
@@ -61,6 +55,7 @@ class DashboardScreen extends StatelessWidget {
           final limit = settings.dailyLimit;
           final state = brainStateFor(today.total, limit: limit);
           final progress = min(today.total / (limit ?? _ringFullAt), 1.0);
+          final ringColors = stateColors(state);
 
           return ListView(
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 120),
@@ -76,6 +71,11 @@ class DashboardScreen extends StatelessWidget {
                       onPressed: () => _showDebugSheet(context, counts),
                     ),
                   AppIconButton(
+                    icon: AppColors.isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
+                    tooltip: AppColors.isDark ? 'Light theme' : 'Dark theme',
+                    onPressed: () => settingsCtrl.setThemeMode(AppColors.isDark ? ThemeMode.light : ThemeMode.dark),
+                  ),
+                  AppIconButton(
                     icon: Icons.settings_outlined,
                     tooltip: 'Settings',
                     onPressed: () => context.push('/settings'),
@@ -84,8 +84,8 @@ class DashboardScreen extends StatelessWidget {
               ),
               const SizedBox(height: 18),
               if (!counts.accessibilityEnabled.value) ...[const _TrackingOffCard(), const SizedBox(height: 14)],
-              AppCard(
-                padding: const EdgeInsets.fromLTRB(18, 22, 18, 18),
+              _HeroCard(
+                glow: ringColors.last,
                 child: Column(
                   children: [
                     SizedBox.square(
@@ -97,62 +97,79 @@ class DashboardScreen extends StatelessWidget {
                             tween: Tween(end: progress),
                             duration: settings.reducedMotion ? Duration.zero : const Duration(milliseconds: 800),
                             curve: Curves.easeOutCubic,
-                            builder: (context, p, _) =>
-                                CustomPaint(size: const Size.square(220), painter: _RingPainter(p)),
+                            builder: (context, p, _) => CustomPaint(
+                              size: const Size.square(220),
+                              painter: _RingPainter(p, ringColors),
+                            ),
                           ),
-                          AnimatedSwitcher(
+                          AnimatedContainer(
                             duration: const Duration(milliseconds: 400),
-                            child: SoftBlob(key: ValueKey(state), size: 172, color: _blobColor(state)),
+                            width: 172,
+                            height: 172,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: RadialGradient(
+                                colors: [
+                                  ringColors.first.withValues(alpha: AppColors.isDark ? 0.16 : 0.14),
+                                  AppColors.surfaceHigh.withValues(alpha: AppColors.isDark ? 0.9 : 0.6),
+                                ],
+                              ),
+                            ),
                           ),
-                          BrainView(
-                            count: today.total,
-                            limit: limit,
-                            reducedMotion: settings.reducedMotion,
-                            size: 132,
-                            showLabel: false,
-                          ),
+                          MascotView(state: state, reducedMotion: settings.reducedMotion, size: 168),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 14),
                     Semantics(
                       label: '${today.total} reels today, ${watchTime(today.totalSeconds)} in reels',
                       excludeSemantics: true,
                       child: Column(
                         children: [
-                          CustomText(
-                            text: '${today.total}',
-                            fontSize: 44,
-                            fontWeight: FontWeight.w700,
-                            height: 1.05,
-                            letterSpacing: -1,
-                          ),
-                          const CustomText(text: 'reels today', fontSize: 12, color: AppColors.textMuted),
-                          const SizedBox(height: 10),
                           Row(
                             mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.baseline,
+                            textBaseline: TextBaseline.alphabetic,
                             children: [
-                              const Icon(Icons.schedule_rounded, size: 15, color: AppColors.lavender),
-                              const SizedBox(width: 5),
                               CustomText(
-                                text: '${watchTime(today.totalSeconds)} in reels',
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.lavender,
+                                text: '${today.total}',
+                                fontSize: 56,
+                                fontWeight: FontWeight.w800,
+                                height: 1.0,
+                                letterSpacing: -1.5,
                               ),
+                              if (limit != null)
+                                CustomText(
+                                  text: ' / $limit',
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.textMuted,
+                                ),
                             ],
+                          ),
+                          const SizedBox(height: 4),
+                          CustomText(
+                            text: 'reels today',
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.isDark ? AppColors.lilac : AppColors.lavender,
                           ),
                         ],
                       ),
                     ),
-                    if (counts.yesterday != null) ...[
+                    if (limit != null) ...[
                       const SizedBox(height: 12),
-                      _DeltaChip(diff: today.total - counts.yesterday!.total),
+                      _LimitPill(left: limit - today.total),
                     ],
+                    const SizedBox(height: 18),
+                    _StatsStrip(
+                      seconds: today.totalSeconds,
+                      total: today.total,
+                      yesterday: counts.yesterday?.total,
+                    ),
                   ],
                 ),
               ),
-              if (limit != null) ...[const SizedBox(height: 14), _LimitCard(total: today.total, settings: settings)],
               const SizedBox(height: 20),
               CustomText(
                 text: '${state.label} brain. A visualization, not a diagnosis.',
@@ -206,44 +223,96 @@ class DashboardScreen extends StatelessWidget {
 }
 
 class _RingPainter extends CustomPainter {
-  _RingPainter(this.progress);
+  _RingPainter(this.progress, this.colors) : dark = AppColors.isDark;
 
   final double progress;
-
-  Color get _color => progress < 0.5
-      ? Color.lerp(AppColors.sage, AppColors.lavender, progress * 2)!
-      : Color.lerp(AppColors.lavender, AppColors.coral, (progress - 0.5) * 2)!;
+  final List<Color> colors;
+  final bool dark;
 
   @override
   void paint(Canvas canvas, Size size) {
-    const stroke = 14.0;
-    final rect = Rect.fromCircle(center: size.center(Offset.zero), radius: size.width / 2 - stroke / 2);
-    canvas.drawArc(
-      rect,
-      0,
-      2 * pi,
-      false,
+    const stroke = 16.0;
+    final center = size.center(Offset.zero);
+    final radius = size.width / 2 - stroke / 2 - 4;
+    final rect = Rect.fromCircle(center: center, radius: radius);
+    canvas.drawCircle(
+      center,
+      radius,
       Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = stroke
         ..color = AppColors.surfaceHigh,
     );
     if (progress <= 0) return;
+
+    final sweep = 2 * pi * progress;
+    final shader = SweepGradient(
+      endAngle: sweep,
+      colors: colors,
+      transform: const GradientRotation(-pi / 2),
+    ).createShader(rect);
+    if (AppColors.isDark) {
+      canvas.drawArc(
+        rect,
+        -pi / 2,
+        sweep,
+        false,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = stroke
+          ..shader = shader
+          ..color = Colors.white.withValues(alpha: 0.45)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10),
+      );
+    }
     canvas.drawArc(
       rect,
       -pi / 2,
-      2 * pi * progress,
+      sweep,
       false,
       Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = stroke
-        ..strokeCap = StrokeCap.round
-        ..color = _color,
+        ..shader = shader,
     );
+    // Round ends drawn separately so each cap keeps its own gradient color.
+    Offset at(double a) => center + Offset(cos(a), sin(a)) * radius;
+    canvas.drawCircle(at(-pi / 2), stroke / 2, Paint()..color = colors.first);
+    canvas.drawCircle(at(-pi / 2 + sweep), stroke / 2, Paint()..color = colors.last);
   }
 
   @override
-  bool shouldRepaint(_RingPainter old) => old.progress != progress;
+  bool shouldRepaint(_RingPainter old) => old.progress != progress || old.colors != colors || old.dark != dark;
+}
+
+/// Dashboard hero card: surface with a soft tint of the ring color at the top.
+class _HeroCard extends StatelessWidget {
+  const _HeroCard({required this.glow, required this.child});
+
+  final Color glow;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 400),
+      padding: const EdgeInsets.fromLTRB(18, 24, 18, 20),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: AppColors.stroke.withValues(alpha: AppColors.isDark ? 0.8 : 0.6)),
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color.alphaBlend(glow.withValues(alpha: AppColors.isDark ? 0.12 : 0.06), AppColors.surface),
+            AppColors.surface,
+          ],
+        ),
+        boxShadow: AppColors.isDark ? null : AppShadows.sm,
+      ),
+      child: child,
+    );
+  }
 }
 
 class _TrackingOffCard extends StatelessWidget {
@@ -257,7 +326,7 @@ class _TrackingOffCard extends StatelessWidget {
         children: [
           const IconBadge(icon: Icons.pause_circle_outline, color: AppColors.coral, size: 40),
           const SizedBox(width: 12),
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -282,77 +351,94 @@ class _TrackingOffCard extends StatelessWidget {
   }
 }
 
-class _DeltaChip extends StatelessWidget {
-  const _DeltaChip({required this.diff});
+class _LimitPill extends StatelessWidget {
+  const _LimitPill({required this.left});
 
-  final int diff;
+  final int left;
 
   @override
   Widget build(BuildContext context) {
-    final (text, fg, bg, icon) = switch (diff) {
-      0 => ('Same as yesterday', AppColors.textMuted, AppColors.surfaceHigh, Icons.drag_handle_rounded),
-      > 0 => ('$diff more than yesterday', AppColors.coral, AppColors.peachSoft, Icons.trending_up_rounded),
-      _ => ('${-diff} fewer than yesterday', AppColors.sage, AppColors.sageSoft, Icons.trending_down_rounded),
-    };
-    return StatusPill(text: text, color: fg, background: bg, icon: icon);
+    final reached = left <= 0;
+    return StatusPill(
+      text: reached ? 'Limit reached · reels paused' : '$left left before reels pause',
+      icon: reached ? Icons.block : Icons.flag_outlined,
+      color: reached ? AppColors.coral : AppColors.lavender,
+      background: reached ? AppColors.peachSoft : AppColors.lavenderSoft,
+    );
   }
 }
 
-class _LimitCard extends StatelessWidget {
-  const _LimitCard({required this.total, required this.settings});
+/// Watch time and change vs yesterday.
+class _StatsStrip extends StatelessWidget {
+  const _StatsStrip({required this.seconds, required this.total, required this.yesterday});
 
+  final int seconds;
   final int total;
-  final AppSettings settings;
+  final int? yesterday;
 
   @override
   Widget build(BuildContext context) {
-    final limit = settings.dailyLimit!;
-    final left = limit - total;
-    final reached = left <= 0;
-    return AppCard(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const IconBadge(icon: Icons.flag_outlined, color: AppColors.lavender, size: 40),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SectionLabel('Daily limit'),
-                    CustomText(text: '$total of $limit', fontSize: 15, fontWeight: FontWeight.w700),
-                  ],
-                ),
-              ),
-              StatusPill(
-                text: reached ? 'Reached' : '$left left',
-                icon: reached ? Icons.block : Icons.check_circle,
-                color: reached ? AppColors.coral : AppColors.lavender,
-                background: reached ? AppColors.peachSoft : AppColors.lavenderSoft,
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: LinearProgressIndicator(
-              value: min(total / limit, 1),
-              minHeight: 6,
-              color: reached ? AppColors.coral : AppColors.lavender,
-              backgroundColor: AppColors.lavenderSoft,
-            ),
-          ),
-          const SizedBox(height: 10),
-          CustomText(
-            text: reached ? 'Limit reached. Reels are paused.' : 'Reels pause at the limit',
-            fontSize: 11,
-            color: AppColors.textMuted,
-          ),
-        ],
+    final diff = yesterday == null ? null : total - yesterday!;
+    final cells = <Widget>[
+      _Stat(
+        icon: Icons.schedule_rounded,
+        color: AppColors.lavender,
+        value: watchTime(seconds),
+        label: 'in reels',
       ),
+      if (diff != null)
+        _Stat(
+          icon: diff > 0
+              ? Icons.trending_up_rounded
+              : diff < 0
+              ? Icons.trending_down_rounded
+              : Icons.drag_handle_rounded,
+          color: diff > 0
+              ? AppColors.coral
+              : diff < 0
+              ? AppColors.sage
+              : AppColors.textMuted,
+          value: diff > 0 ? '+$diff' : diff < 0 ? '−${-diff}' : 'Same',
+          label: 'vs yesterday',
+        ),
+    ];
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceHigh.withValues(alpha: AppColors.isDark ? 0.7 : 0.8),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: IntrinsicHeight(
+        child: Row(
+          children: [
+            for (final (i, c) in cells.indexed) ...[
+              if (i > 0) VerticalDivider(width: 1, thickness: 1, color: AppColors.stroke),
+              Expanded(child: c),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _Stat extends StatelessWidget {
+  const _Stat({required this.icon, required this.color, required this.value, required this.label});
+
+  final IconData icon;
+  final Color color;
+  final String value;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Icon(icon, size: 16, color: color),
+        const SizedBox(height: 4),
+        CustomText(text: value, fontSize: 14, fontWeight: FontWeight.w700, maxLines: 1),
+        CustomText(text: label, fontSize: 10, color: AppColors.textMuted, maxLines: 1),
+      ],
     );
   }
 }
