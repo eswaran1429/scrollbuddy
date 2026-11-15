@@ -11,7 +11,6 @@ import '../features/onboarding/onboarding_screen.dart';
 import '../features/settings/settings_screen.dart';
 import '../features/splash/splash_screen.dart';
 
-/// Fades a page in; used for the screens the splash hands over to.
 CustomTransitionPage<void> _fade(GoRouterState state, Widget child) => CustomTransitionPage<void>(
   key: state.pageKey,
   child: child,
@@ -19,7 +18,6 @@ CustomTransitionPage<void> _fade(GoRouterState state, Widget child) => CustomTra
   transitionsBuilder: (context, animation, _, child) => FadeTransition(opacity: animation, child: child),
 );
 
-/// The splash decides whether to continue to onboarding or Today.
 GoRouter createRouter() {
   return GoRouter(
     initialLocation: '/splash',

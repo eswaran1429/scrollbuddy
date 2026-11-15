@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 class AppIcons {
   AppIcons._();
 
-  /// Icon for a change category or scan step.
   static IconData category(String name) => switch (name) {
     'dns' => Icons.dns_outlined,
     'subdomains' => Icons.account_tree_outlined,

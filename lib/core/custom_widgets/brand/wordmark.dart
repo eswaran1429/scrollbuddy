@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:scrollbuddy/core/custom_widgets/custom_text/custom_text.dart';
 import 'package:scrollbuddy/core/themes/app_colors.dart';
 
-/// App mascot (transparent artwork) on a soft lavender circle.
 class AppLogo extends StatelessWidget {
   const AppLogo({super.key, this.size = 40});
 
@@ -20,7 +19,6 @@ class AppLogo extends StatelessWidget {
   }
 }
 
-/// Logo + "ScrollBuddy".
 class Wordmark extends StatelessWidget {
   const Wordmark({super.key, this.size = 22});
 

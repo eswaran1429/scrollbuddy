@@ -5,7 +5,6 @@ import 'package:scrollbuddy/core/themes/app_tokens.dart';
 
 enum AppButtonVariant { primary, secondary, text }
 
-/// Rounded button. Primary is solid sage; disabled when [onPressed] is null.
 class AppButton extends StatelessWidget {
   const AppButton({
     super.key,
@@ -92,7 +91,6 @@ class AppButton extends StatelessWidget {
   }
 }
 
-/// Rounded-square white icon button with a soft shadow.
 class AppIconButton extends StatelessWidget {
   const AppIconButton({super.key, required this.icon, required this.onPressed, required this.tooltip});
 

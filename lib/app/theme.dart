@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:scrollbuddy/core/custom_widgets/custom_text/custom_text.dart';
 import 'package:scrollbuddy/core/themes/app_colors.dart';
 
-/// Light or dark theme from [AppColors]; set [AppColors.isDark] before calling.
 class AppTheme {
   static ThemeData build() {
     final brightness = AppColors.isDark ? Brightness.dark : Brightness.light;
@@ -79,10 +78,7 @@ class AppTheme {
       ),
       textButtonTheme: TextButtonThemeData(style: TextButton.styleFrom(foregroundColor: AppColors.sage)),
       dividerTheme: DividerThemeData(color: AppColors.stroke, thickness: 1, space: 1),
-      progressIndicatorTheme: ProgressIndicatorThemeData(
-        color: AppColors.sage,
-        linearTrackColor: AppColors.sageSoft,
-      ),
+      progressIndicatorTheme: ProgressIndicatorThemeData(color: AppColors.sage, linearTrackColor: AppColors.sageSoft),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         backgroundColor: AppColors.lavenderSoft,
         foregroundColor: AppColors.lavender,

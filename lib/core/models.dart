@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-/// The four apps ScrollBuddy can track.
 enum TrackedApp {
   instagram('Instagram', Color(0xFFE1306C), Icons.camera_alt_outlined),
   youtube('YouTube', Color(0xFFFF3D3D), Icons.play_circle_outline),
@@ -14,15 +13,12 @@ enum TrackedApp {
   final IconData icon;
 }
 
-/// Reel counts and time in reels for one local calendar day.
 class DayCounts {
   const DayCounts({required this.date, required this.perApp, this.seconds = const {}});
 
-  /// Local date at midnight.
   final DateTime date;
   final Map<TrackedApp, int> perApp;
 
-  /// Seconds spent in each app's reels viewer.
   final Map<TrackedApp, int> seconds;
 
   int get total => perApp.values.fold(0, (a, b) => a + b);
@@ -36,9 +32,6 @@ class DayCounts {
   DayCounts increment(TrackedApp app, [int by = 1]) =>
       DayCounts(date: date, perApp: {...perApp, app: of(app) + by}, seconds: seconds);
 
-  /// From the bridge format
-  /// `{"date": "YYYY-MM-DD", "counts": {"instagram": 3, ...}, "seconds": {"instagram": 95, ...}}`.
-  /// Unknown app keys are ignored.
   factory DayCounts.fromMap(Map<String, dynamic> m) {
     Map<TrackedApp, int> perApp(Object? raw) {
       final map = Map<String, dynamic>.from(raw as Map? ?? const {});

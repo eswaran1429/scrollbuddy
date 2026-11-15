@@ -29,7 +29,6 @@ class _ScrollBuddyAppState extends State<ScrollBuddyApp> with WidgetsBindingObse
       if (s == AnimationStatus.completed) _clearSnapshot();
     });
 
-  /// Picture of the screen in the old theme, faded out over the new one.
   ui.Image? _snapshot;
 
   @override
@@ -59,7 +58,9 @@ class _ScrollBuddyAppState extends State<ScrollBuddyApp> with WidgetsBindingObse
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state != AppLifecycleState.resumed) return;
-    Get.find<CountsController>().refreshAccessibility();
+    Get.find<CountsController>()
+      ..refreshAccessibility()
+      ..refreshToday();
     _checkBlock();
   }
 
@@ -72,7 +73,6 @@ class _ScrollBuddyAppState extends State<ScrollBuddyApp> with WidgetsBindingObse
     return mode == ThemeMode.dark || (mode == ThemeMode.system && platformDark);
   }
 
-  /// Snapshots the current screen, flips the theme underneath, then fades the snapshot out.
   void _applyTheme() {
     final dark = _wantDark();
     if (!mounted || dark == AppColors.isDark) return;
@@ -83,9 +83,7 @@ class _ScrollBuddyAppState extends State<ScrollBuddyApp> with WidgetsBindingObse
         final image = boundary.toImageSync(pixelRatio: View.of(context).devicePixelRatio);
         _snapshot?.dispose();
         _snapshot = image;
-      } catch (_) {
-        // Not painted yet (e.g. mid-frame): switch without the fade.
-      }
+      } catch (_) {}
     }
 
     AppColors.isDark = dark;
@@ -135,8 +133,6 @@ class _ScrollBuddyAppState extends State<ScrollBuddyApp> with WidgetsBindingObse
     );
   }
 
-  /// Widgets read [AppColors] directly, so const and GlobalKey'd subtrees (router
-  /// navigators) keep old colors after a theme flip. Mark every element dirty instead.
   void _rebuildAll() {
     void mark(Element e) {
       e.markNeedsBuild();

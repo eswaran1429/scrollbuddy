@@ -4,8 +4,6 @@ import 'package:scrollbuddy/core/custom_widgets/app_button/app_button.dart';
 import 'package:scrollbuddy/core/custom_widgets/custom_text/custom_text.dart';
 import 'package:scrollbuddy/core/themes/app_colors.dart';
 
-/// Screen header: optional square back button, bold title with a small
-/// subtitle, and square action buttons on the right.
 class PageHeader extends StatelessWidget {
   const PageHeader({super.key, required this.title, this.subtitle, this.showBack = false, this.actions = const []});
 
@@ -44,7 +42,6 @@ class PageHeader extends StatelessWidget {
   }
 }
 
-/// Small uppercase label above a group, e.g. "TRACKED APPS".
 class SectionLabel extends StatelessWidget {
   const SectionLabel(this.text, {super.key});
 
@@ -62,7 +59,6 @@ class SectionLabel extends StatelessWidget {
   }
 }
 
-/// Small rounded pill with an optional leading icon.
 class StatusPill extends StatelessWidget {
   const StatusPill({super.key, required this.text, required this.color, required this.background, this.icon});
 

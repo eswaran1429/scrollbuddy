@@ -8,11 +8,6 @@ import org.json.JSONObject
 import java.time.LocalDate
 import java.util.concurrent.CopyOnWriteArraySet
 
-/**
- * Source of truth for reel counts and app settings (D-04, D-05).
- * Written by the accessibility service, read by Flutter through the bridge.
- * Service and activity run in the same process, so one shared instance is used.
- */
 class CounterStore private constructor(context: Context) :
     SQLiteOpenHelper(context, "scrollbuddy.db", null, 2) {
 
@@ -22,7 +17,6 @@ class CounterStore private constructor(context: Context) :
 
     private val listeners = CopyOnWriteArraySet<Listener>()
 
-    /** Parsed bits of the settings JSON the service needs. Cleared on save. */
     private data class ServiceSettings(
         val trackedApps: Set<String>,
         val showOverlay: Boolean,
@@ -46,7 +40,6 @@ class CounterStore private constructor(context: Context) :
         if (oldVersion < 2) createSecondsTable(db)
     }
 
-    /** Seconds spent in each app's reels viewer per local day (v2). */
     private fun createSecondsTable(db: SQLiteDatabase) = db.execSQL(
         "CREATE TABLE daily_seconds (local_date TEXT NOT NULL, app_key TEXT NOT NULL, " +
             "seconds INTEGER NOT NULL, PRIMARY KEY (local_date, app_key))",
@@ -56,13 +49,11 @@ class CounterStore private constructor(context: Context) :
 
     fun removeListener(l: Listener) = listeners.remove(l)
 
-    /** Adds [by] to today's count for [appKey]. Uses the local date at call time, so midnight rollover is automatic. */
     fun increment(appKey: String, by: Int = 1) {
         addToday("daily_counts", "count", appKey, by)
         notifyListeners()
     }
 
-    /** Adds [seconds] watched in [appKey]'s reels viewer today. */
     fun addSeconds(appKey: String, seconds: Int) {
         addToday("daily_seconds", "seconds", appKey, seconds)
         notifyListeners()
@@ -112,7 +103,6 @@ class CounterStore private constructor(context: Context) :
 
     fun todayTotal(): Int = todayCounts().values.sum()
 
-    /** The [days] days before today, oldest first. Days with no reels are included with empty counts. */
     fun history(days: Int): List<Pair<String, Map<String, Int>>> {
         val today = LocalDate.now()
         val from = today.minusDays(days.toLong()).toString()
@@ -143,7 +133,6 @@ class CounterStore private constructor(context: Context) :
         notifyListeners()
     }
 
-    /** Flutter's settings as a JSON string, or null before first save. */
     fun settingsJson(): String? =
         readableDatabase.rawQuery("SELECT value FROM settings WHERE key = ?", arrayOf(SETTINGS_KEY)).use { c ->
             if (c.moveToFirst()) c.getString(0) else null
@@ -162,7 +151,6 @@ class CounterStore private constructor(context: Context) :
         cache = null
     }
 
-    /** Saved floating-counter position (x offset from centre, y from top), or null. */
     fun overlayPosition(): Pair<Int, Int>? {
         val raw = readableDatabase.rawQuery("SELECT value FROM settings WHERE key = ?", arrayOf(OVERLAY_POS_KEY)).use { c ->
             if (c.moveToFirst()) c.getString(0) else null
@@ -183,19 +171,14 @@ class CounterStore private constructor(context: Context) :
         )
     }
 
-    /** App keys the user wants tracked. All apps until settings are saved. */
     fun trackedApps(): Set<String> = serviceSettings().trackedApps
 
-    /** Whether to show the floating counter over the reels viewer. On by default. */
     fun showOverlay(): Boolean = serviceSettings().showOverlay
 
-    /** The counter appears once today's total reaches this (0 = from the first reel). */
     fun overlayAfter(): Int = serviceSettings().overlayAfter
 
-    /** Daily reel limit; blocking is on whenever it is set. */
     fun limits(): Limits = serviceSettings().limits
 
-    /** Bonus reels unlocked today from the block screen. */
     fun bonusToday(): Int =
         readableDatabase.rawQuery("SELECT value FROM settings WHERE key = ?", arrayOf(bonusKey())).use { c ->
             if (c.moveToFirst()) c.getString(0).toIntOrNull() ?: 0 else 0

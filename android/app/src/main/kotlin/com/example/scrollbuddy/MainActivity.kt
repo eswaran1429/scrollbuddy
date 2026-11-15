@@ -19,7 +19,6 @@ class MainActivity : FlutterActivity() {
         takeBlockExtra(intent)
     }
 
-    // The service opens this activity when a reel limit is reached (singleTop: reuses it).
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         takeBlockExtra(intent)
@@ -36,7 +35,6 @@ class MainActivity : FlutterActivity() {
     companion object {
         const val EXTRA_BLOCK = "scrollbuddy.block"
 
-        /** Set when the block screen should open; Flutter reads and clears it. */
         @Volatile
         var blockRequested = false
     }

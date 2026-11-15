@@ -19,7 +19,6 @@ class _Entry {
   final bool isMe;
 }
 
-/// Active players by count ascending, then inactive ones (they cannot win, D-14).
 List<_Entry> _rank(List<_Entry> entries) => [
   ...entries.where((e) => e.active).toList()..sort((a, b) => a.count.compareTo(b.count)),
   ...entries.where((e) => !e.active),

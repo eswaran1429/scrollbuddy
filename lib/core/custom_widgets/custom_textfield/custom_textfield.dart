@@ -21,10 +21,8 @@ class CustomTextField extends StatelessWidget {
   final bool obscureText;
   final bool autofocus;
 
-  /// Typed text style; defaults to the theme (readable in light and dark).
   final TextStyle? textStyle;
 
-  /// Background fill; null means no fill.
   final Color? fillColor;
 
   const CustomTextField({

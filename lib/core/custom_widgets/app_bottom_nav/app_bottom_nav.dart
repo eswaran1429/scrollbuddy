@@ -11,7 +11,6 @@ class AppNavItem {
   final String label;
 }
 
-/// Floating white pill nav. The selected item gets a sage capsule.
 class AppBottomNav extends StatelessWidget {
   const AppBottomNav({super.key, required this.items, required this.currentIndex, required this.onTap});
 

@@ -147,7 +147,7 @@ class _HistoryBody extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  const SectionLabel('Reels per day' ),
+                  const SectionLabel('Reels per day'),
                   const Spacer(),
                   if (limit != null && days.length <= 7) ...[
                     Container(width: 12, height: 2, color: AppColors.coral),

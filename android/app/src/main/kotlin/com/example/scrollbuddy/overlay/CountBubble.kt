@@ -25,13 +25,6 @@ import com.example.scrollbuddy.R
 import com.example.scrollbuddy.store.CounterStore
 import kotlin.math.abs
 
-/**
- * Floating counter over the reels viewer: split-flap digits in a purple frame with the
- * mascot peeking over the top. Changed digits flip when the count goes up.
- * Uses TYPE_ACCESSIBILITY_OVERLAY, so no SYSTEM_ALERT_WINDOW permission (D-07).
- * Draggable: the window is only as big as the counter, so touches elsewhere reach the app.
- * The dragged position is saved in [CounterStore] and reused next time.
- */
 class CountBubble(private val service: AccessibilityService, private val store: CounterStore) {
     private val wm = service.getSystemService(WindowManager::class.java)
     private var view: FlipCounterView? = null
@@ -43,7 +36,6 @@ class CountBubble(private val service: AccessibilityService, private val store: 
         view?.setCount(count, animate = false)
     }
 
-    /** Flips the changed digits if the count went up. */
     fun update(count: Int) {
         view?.setCount(count, animate = true)
     }
@@ -63,19 +55,16 @@ class CountBubble(private val service: AccessibilityService, private val store: 
             WindowManager.LayoutParams.WRAP_CONTENT,
             WindowManager.LayoutParams.WRAP_CONTENT,
             WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
-            // Not modal: touches outside the counter go to the app underneath.
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
                 WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
                 WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
             PixelFormat.TRANSLUCENT,
         ).apply {
-            // x is the offset from the horizontal centre, y from the top.
             gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
             x = saved?.first ?: 0
             y = saved?.second ?: (statusBarHeight() + v.dp(40f).toInt())
         }
         enableDrag(v, params)
-        // The counter gets wider at 100 (3 tiles): keep it fully on screen after it grows.
         v.addOnLayoutChangeListener { _, l, _, r, _, ol, _, or, _ ->
             if (r - l != or - ol && view === v) {
                 clamp(v, params)
@@ -117,7 +106,6 @@ class CountBubble(private val service: AccessibilityService, private val store: 
         }
     }
 
-    /** Keeps the whole counter on screen. */
     private fun clamp(v: View, params: WindowManager.LayoutParams) {
         val dm = service.resources.displayMetrics
         val maxX = ((dm.widthPixels - v.width) / 2).coerceAtLeast(0)
@@ -132,16 +120,10 @@ class CountBubble(private val service: AccessibilityService, private val store: 
     }
 }
 
-/**
- * Split-flap counter. Each digit tile has a top and bottom half split by a hinge.
- * A flip: first the old top half folds down to the hinge (0°→90°), revealing the new
- * top behind it; then the new bottom half falls from the hinge into place (90°→0°).
- */
 private class FlipCounterView(context: Context) : View(context) {
     private val density = context.resources.displayMetrics.density
     fun dp(v: Float) = v * density
 
-    // Layout (dp).
     private val tileW = dp(34f)
     private val tileH = dp(46f)
     private val gap = dp(6f)
@@ -155,7 +137,6 @@ private class FlipCounterView(context: Context) : View(context) {
     private val cat: Bitmap = BitmapFactory.decodeResource(context.resources, R.drawable.overlay_logo)
     private val catH = catW * cat.height / cat.width
 
-    // Digits currently shown (from) and target (to); equal when idle.
     private var from = digitsOf(0)
     private var to = digitsOf(0)
     private var progress = 1f
@@ -194,7 +175,6 @@ private class FlipCounterView(context: Context) : View(context) {
         val next = digitsOf(count)
         contentDescription = "$count reels today"
         if (next.size != to.size || !animate) {
-            // Tile count changed (e.g. 99 → 100) or first show: no flip, just relayout.
             stopAnimation()
             from = next
             to = next
@@ -204,7 +184,7 @@ private class FlipCounterView(context: Context) : View(context) {
             return
         }
         if (next.contentEquals(to)) return
-        stopAnimation() // finish any running flip first
+        stopAnimation()
         from = to
         to = next
         progress = 0f
@@ -242,24 +222,20 @@ private class FlipCounterView(context: Context) : View(context) {
         val left = (width - frameWidth()) / 2f
         val top = catTopRoom()
 
-        // Frame.
         rect.set(left, top, left + frameWidth(), top + frameHeight())
         framePaint.shader = LinearGradient(0f, rect.top, 0f, rect.bottom, FRAME_TOP, FRAME_BOTTOM, Shader.TileMode.CLAMP)
         canvas.drawRoundRect(rect, frameRadius, frameRadius, framePaint)
         canvas.drawRoundRect(rect, frameRadius, frameRadius, frameStroke)
 
-        // Tiles.
         for (i in to.indices) {
             val tl = left + pad + i * (tileW + gap)
             drawTile(canvas, RectF(tl, top + pad, tl + tileW, top + pad + tileH), from[i], to[i])
         }
 
-        // Mascot peeking over the top edge, drawn last so its paws overlap the frame.
         val cx = width / 2f
         rect.set(cx - catW / 2, 0f, cx + catW / 2, catH)
         canvas.drawBitmap(cat, null, rect, bitmapPaint)
 
-        // Sparks to the top-right of the mascot.
         val sx = cx + catW * 0.42f
         val sy = catH * 0.22f
         canvas.drawLine(sx, sy, sx + dp(3f), sy - dp(7f), sparkPaint)
@@ -273,7 +249,6 @@ private class FlipCounterView(context: Context) : View(context) {
             drawHalf(canvas, tile, new, top = true)
             drawHalf(canvas, tile, new, top = false)
         } else {
-            // Behind the flap: new top is revealed, old bottom stays until the second phase.
             drawHalf(canvas, tile, new, top = true)
             drawHalf(canvas, tile, old, top = false)
             if (progress < 0.5f) {
@@ -284,13 +259,11 @@ private class FlipCounterView(context: Context) : View(context) {
                 drawFlap(canvas, tile, new, top = false, angle = angle)
             }
         }
-        // Hinge line and side notches.
         canvas.drawRect(tile.left, hinge - dp(1f), tile.right, hinge + dp(1f), hingePaint)
         canvas.drawRect(tile.left - dp(3f), hinge - dp(3f), tile.left + dp(1f), hinge + dp(3f), notchPaint)
         canvas.drawRect(tile.right - dp(1f), hinge - dp(3f), tile.right + dp(3f), hinge + dp(3f), notchPaint)
     }
 
-    /** One half of a tile (background + the matching half of the digit). */
     private fun drawHalf(canvas: Canvas, tile: RectF, digit: Char, top: Boolean) {
         val hinge = tile.centerY()
         canvas.save()
@@ -301,7 +274,6 @@ private class FlipCounterView(context: Context) : View(context) {
         canvas.restore()
     }
 
-    /** A half rotated around the hinge, darkened as it turns edge-on. */
     private fun drawFlap(canvas: Canvas, tile: RectF, digit: Char, top: Boolean, angle: Float) {
         val hinge = tile.centerY()
         camera.save()

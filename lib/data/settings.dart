@@ -16,10 +16,6 @@ enum UnlockMode {
   final String description;
 }
 
-/// User settings. One reel limit: the daily total across all tracked apps.
-/// When it is set, reels are blocked once it is reached.
-/// Saved as JSON in the native store (D-05) so the accessibility
-/// service can read them (it uses `trackedApps`).
 class AppSettings {
   const AppSettings({
     this.dailyLimit,
@@ -40,10 +36,8 @@ class AppSettings {
   final bool reducedMotion;
   final bool onboardingDone;
 
-  /// Floating counter over the reels viewer (read by the native service).
   final bool showOverlay;
 
-  /// The floating counter appears once today's total reaches this. 0 = from the first reel.
   final int overlayAfter;
 
   final ThemeMode themeMode;
@@ -84,7 +78,6 @@ class AppSettings {
     'themeMode': themeMode.name,
   };
 
-  /// Missing or unknown values fall back to defaults.
   factory AppSettings.fromJson(Map<String, dynamic> j) {
     TrackedApp? app(String name) => TrackedApp.values.asNameMap()[name];
     final tracked = j['trackedApps'] as List?;
@@ -111,13 +104,11 @@ class SettingsController extends GetxController {
 
   AppSettings get _s => settings.value;
 
-  /// Every change is saved to the native store.
   set _s(AppSettings v) {
     settings.value = v;
     _bridge.saveSettings(v.toJson());
   }
 
-  /// Loads saved settings. Call once before the app starts.
   Future<void> load() async {
     final json = await _bridge.loadSettings();
     if (json != null) settings.value = AppSettings.fromJson(json);

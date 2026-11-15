@@ -13,8 +13,6 @@ import '../../core/models.dart';
 import '../../data/counts_controller.dart';
 import '../../data/settings.dart';
 
-// const _chevron = Icon(Icons.chevron_right, color: AppColors.textMuted);
-
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
@@ -25,8 +23,6 @@ class SettingsScreen extends StatelessWidget {
     final s = Get.find<SettingsController>().settings.value;
     final n = Get.find<SettingsController>();
     final trackingOn = Get.find<CountsController>().accessibilityEnabled.value;
-
-    // void snack(String msg) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: CustomText(text: msg)));
 
     return Scaffold(
       body: SafeArea(
@@ -122,13 +118,17 @@ class SettingsScreen extends StatelessWidget {
                     ),
                   ],
                 ),
-                AppTile(
-                  leading: const IconBadge(icon: Icons.bubble_chart_outlined, color: AppColors.lavender),
-                  title: 'Floating counter',
-                  subtitle: 'Shows your count on top of reels',
-                  trailing: Switch(value: s.showOverlay, onChanged: n.setShowOverlay),
+                Column(
+                  children: [
+                    AppTile(
+                      leading: const IconBadge(icon: Icons.bubble_chart_outlined, color: AppColors.lavender),
+                      title: 'Floating counter',
+                      subtitle: 'Shows your count on top of reels',
+                      trailing: Switch(value: s.showOverlay, onChanged: n.setShowOverlay),
+                    ),
+                    if (s.showOverlay) _OverlayAfterPicker(value: s.overlayAfter, onChanged: n.setOverlayAfter),
+                  ],
                 ),
-                if (s.showOverlay) _OverlayAfterPicker(value: s.overlayAfter, onChanged: n.setOverlayAfter),
               ],
             ),
             const SizedBox(height: 22),
@@ -144,53 +144,9 @@ class SettingsScreen extends StatelessWidget {
                     }
                   },
                 ),
-                // AppTile(
-                //   leading: const IconBadge(icon: Icons.download_outlined, color: AppColors.textMuted),
-                //   title: 'Export data (CSV)',
-                //   onTap: () => snack('Export comes in a later version'),
-                // ),
-                // AppTile(
-                //   leading: const IconBadge(icon: Icons.delete_outline, color: AppColors.coral),
-                //   title: 'Delete all data',
-                //   titleColor: AppColors.coral,
-                //   onTap: () async {
-                //     if (await _confirm(
-                //       context,
-                //       'Delete all data?',
-                //       'This removes all counts and settings from this device. It cannot be undone.',
-                //     )) {
-                //       await Get.find<CountsController>().deleteAll();
-                //       n.reset();
-                //     }
-                //   },
-                // ),
               ],
             ),
             const SizedBox(height: 22),
-            // AppTileGroup(
-            //   title: 'About',
-            //   children: [
-            //     AppTile(
-            //       leading: const IconBadge(icon: Icons.privacy_tip_outlined, color: AppColors.textMuted),
-            //       title: 'Privacy policy',
-            //       trailing: _chevron,
-            //       onTap: () => snack('Privacy policy link goes here'),
-            //     ),
-            //     AppTile(
-            //       leading: const IconBadge(icon: Icons.description_outlined, color: AppColors.textMuted),
-            //       title: 'Terms',
-            //       trailing: _chevron,
-            //       onTap: () => snack('Terms link goes here'),
-            //     ),
-            //     AppTile(
-            //       leading: const IconBadge(icon: Icons.replay, color: AppColors.textMuted),
-            //       title: 'Show onboarding again',
-            //       trailing: _chevron,
-            //       onTap: () => context.go('/onboarding'),
-            //     ),
-            //   ],
-            // ),
-            // const SizedBox(height: 20),
             CustomText(
               text: 'ScrollBuddy 1.0.0',
               textAlign: TextAlign.center,
@@ -225,7 +181,6 @@ class SettingsScreen extends StatelessWidget {
   }
 }
 
-/// "Show after" choice for the floating counter: from the first reel, a preset, or a custom number.
 class _OverlayAfterPicker extends StatelessWidget {
   const _OverlayAfterPicker({required this.value, required this.onChanged});
 
@@ -246,7 +201,7 @@ class _OverlayAfterPicker extends StatelessWidget {
   Widget build(BuildContext context) {
     final custom = !_options.contains(value);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
+      padding: const EdgeInsets.fromLTRB(16, 2, 16, 14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -319,8 +274,6 @@ class _Chip extends StatelessWidget {
   }
 }
 
-/// Number entry for a custom "show after" count. Owns its controller so it is
-/// disposed only after the dialog's exit animation (see the limits dialog crash).
 class _CustomCountDialog extends StatefulWidget {
   const _CustomCountDialog({this.initial});
 
@@ -370,7 +323,6 @@ class _CustomCountDialogState extends State<_CustomCountDialog> {
   }
 }
 
-/// Tracked apps: a header with how many are counted, then a 2×2 grid of toggles.
 class _TrackedAppsCard extends StatelessWidget {
   const _TrackedAppsCard({required this.tracked, required this.onToggle});
 
@@ -430,7 +382,6 @@ class _TrackedAppsCard extends StatelessWidget {
   }
 }
 
-/// One app toggle: round badge filled with the app colour when tracked, name, status and a check.
 class _AppToggle extends StatelessWidget {
   const _AppToggle({required this.app, required this.on, required this.onTap});
 

@@ -9,7 +9,6 @@ import '../../core/brain_state_colors.dart';
 import '../../core/format.dart';
 import '../../core/models.dart';
 
-/// Line under the chart naming the selected day, e.g. "Wed 11 Nov · 280 reels · Tired".
 class _DayCaption extends StatelessWidget {
   const _DayCaption({required this.day, required this.limit, required this.isToday});
 
@@ -27,13 +26,13 @@ class _DayCaption extends StatelessWidget {
         key: ValueKey(day.date),
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
-          const SizedBox(width: 8),
-          CustomText(
-            text: '${isToday ? 'Today' : shortDate(day.date)} · ',
-            fontSize: 12,
-            color: AppColors.textMuted,
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
           ),
+          const SizedBox(width: 8),
+          CustomText(text: '${isToday ? 'Today' : shortDate(day.date)} · ', fontSize: 12, color: AppColors.textMuted),
           CustomText(text: '${day.total} reels', fontSize: 12, fontWeight: FontWeight.w700),
           CustomText(text: ' · ${watchTime(day.totalSeconds)}', fontSize: 12, color: AppColors.textMuted),
         ],
@@ -42,7 +41,6 @@ class _DayCaption extends StatelessWidget {
   }
 }
 
-/// Rounded bars, one per day, coloured by that day's brain state. Tap a bar to see its numbers.
 class DayBars extends StatefulWidget {
   const DayBars({super.key, required this.days, required this.limit});
 
@@ -111,12 +109,7 @@ class _DayBarsState extends State<DayBars> {
         Row(
           children: [
             for (final (i, d) in days.indexed)
-              Expanded(
-                child: Center(
-                  child: _label(i, d, thin) ??
-                      const SizedBox.shrink(),
-                ),
-              ),
+              Expanded(child: Center(child: _label(i, d, thin) ?? const SizedBox.shrink())),
           ],
         ),
         const SizedBox(height: 14),
@@ -189,9 +182,7 @@ class _Bar extends StatelessWidget {
                   gradient: LinearGradient(
                     begin: Alignment.bottomCenter,
                     end: Alignment.topCenter,
-                    colors: [
-                      for (final c in colors) dim ? c.withValues(alpha: AppColors.isDark ? 0.45 : 0.4) : c,
-                    ],
+                    colors: [for (final c in colors) dim ? c.withValues(alpha: AppColors.isDark ? 0.45 : 0.4) : c],
                   ),
                   border: isToday && !selected ? Border.all(color: colors.first, width: 1.5) : null,
                   boxShadow: selected && AppColors.isDark
@@ -216,7 +207,9 @@ class _LimitLine extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Expanded(child: CustomPaint(size: const Size.fromHeight(1.5), painter: _DashPainter(AppColors.coral))),
+        Expanded(
+          child: CustomPaint(size: const Size.fromHeight(1.5), painter: _DashPainter(AppColors.coral)),
+        ),
       ],
     );
   }
@@ -242,7 +235,6 @@ class _DashPainter extends CustomPainter {
   bool shouldRepaint(_DashPainter old) => old.color != color;
 }
 
-/// Calendar grid, Monday first. Each square is coloured by that day's state; tap for numbers.
 class DayHeatmap extends StatefulWidget {
   const DayHeatmap({super.key, required this.days, required this.limit});
 
@@ -276,7 +268,9 @@ class _DayHeatmapState extends State<DayHeatmap> {
           children: [
             for (final w in const ['M', 'T', 'W', 'T', 'F', 'S', 'S'])
               Expanded(
-                child: Center(child: CustomText(text: w, fontSize: 11, color: AppColors.textMuted)),
+                child: Center(
+                  child: CustomText(text: w, fontSize: 11, color: AppColors.textMuted),
+                ),
               ),
           ],
         ),
@@ -314,7 +308,6 @@ class _DayHeatmapState extends State<DayHeatmap> {
     final isToday = i == widget.days.length - 1;
     final sel = i == _selected;
     final colors = stateColors(brainStateFor(d.total, limit: widget.limit));
-    // Stronger fill for heavier days inside the same state band.
     final strength = d.total == 0 ? 0.0 : 0.45 + 0.55 * (d.total / top);
     return GestureDetector(
       onTap: () => setState(() => _selected = i),

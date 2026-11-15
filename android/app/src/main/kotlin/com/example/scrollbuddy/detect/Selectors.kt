@@ -1,9 +1,5 @@
 package com.example.scrollbuddy.detect
 
-/**
- * Instagram and YouTube are verified on a device (docs/SELECTORS.md, D-26).
- * Facebook and Snapchat are UNVERIFIED first guesses (D-24): replace them with device evidence.
- */
 object Selectors {
     val all = listOf(
         AppSelectors(
@@ -17,7 +13,6 @@ object Selectors {
             packageName = "com.google.android.youtube",
             viewerIds = listOf("reel_recycler", "reel_player"),
             pagerIds = listOf("reel_recycler"),
-            // Device log 2026-11-04 (YouTube 21.43): one scroll event per visit, no indexes.
             probePagerIndex = true,
         ),
         AppSelectors(

@@ -3,7 +3,6 @@ import 'package:scrollbuddy/core/custom_widgets/custom_text/custom_text.dart';
 import 'package:scrollbuddy/core/themes/app_colors.dart';
 import 'package:scrollbuddy/core/themes/app_tokens.dart';
 
-/// Segmented control: white track, selected tab is a solid sage block.
 class PillTabs extends StatelessWidget {
   const PillTabs({super.key, required this.labels, required this.selected, required this.onChanged});
 

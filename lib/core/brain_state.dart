@@ -12,11 +12,6 @@ enum BrainState {
   final String description;
 }
 
-/// Continuous damage from 0.0 (fresh) to 3.0 (fried). The whole part is the
-/// [BrainState] index; the fraction is progress inside that band.
-///
-/// Bands (plan.md §9, D-12): counts 0 / 50 / 100 / 200, or with a limit the
-/// ratio count/limit at 0 / 50 % / 80 % / 100 %.
 double brainDamage(int count, {int? limit}) {
   final List<double> edges;
   final double v;

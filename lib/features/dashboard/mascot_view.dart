@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../core/brain_state.dart';
 
-/// Hoodie cat mascot, one picture per [BrainState]. Cross-fades between states
-/// and breathes gently unless [reducedMotion] is on.
 class MascotView extends StatefulWidget {
   const MascotView({super.key, required this.state, required this.size, this.reducedMotion = false});
 
@@ -61,7 +59,6 @@ class _MascotViewState extends State<MascotView> with SingleTickerProviderStateM
     super.dispose();
   }
 
-  /// Source files are ~1300 px; decode at display size to save memory.
   ImageProvider _provider(BrainState s) {
     final px = (widget.size * MediaQuery.devicePixelRatioOf(context)).round();
     return ResizeImage(AssetImage(MascotView.asset(s)), width: px, allowUpscaling: false);

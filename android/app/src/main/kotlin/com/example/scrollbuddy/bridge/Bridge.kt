@@ -13,7 +13,6 @@ import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodChannel
 
-/** MethodChannel "scrollbuddy/control" + EventChannel "scrollbuddy/live_count" (D-01). */
 class Bridge(private val activity: Activity, messenger: BinaryMessenger) {
     private val store = CounterStore.get(activity)
     private val main = Handler(Looper.getMainLooper())
@@ -86,7 +85,6 @@ class Bridge(private val activity: Activity, messenger: BinaryMessenger) {
         })
     }
 
-    /** Asks Flutter to open the block screen (app already running). */
     fun notifyBlock() {
         main.post { control.invokeMethod("blockRequested", null) }
     }
@@ -100,7 +98,6 @@ class Bridge(private val activity: Activity, messenger: BinaryMessenger) {
         return enabled.split(':').any { ComponentName.unflattenFromString(it) == me }
     }
 
-    /** One day for Flutter: reel counts and seconds in reels, per app. */
     private fun day(date: String) =
         mapOf("date" to date, "counts" to store.countsFor(date), "seconds" to store.secondsFor(date))
 }

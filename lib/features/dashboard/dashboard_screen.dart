@@ -20,7 +20,6 @@ import '../../data/counts_controller.dart';
 import '../../data/settings.dart';
 import 'mascot_view.dart';
 
-/// Count at which the ring is full when no limit is set (start of "fried").
 const _ringFullAt = 200;
 
 String _greeting(DateTime now) => switch (now.hour) {
@@ -97,10 +96,8 @@ class DashboardScreen extends StatelessWidget {
                             tween: Tween(end: progress),
                             duration: settings.reducedMotion ? Duration.zero : const Duration(milliseconds: 800),
                             curve: Curves.easeOutCubic,
-                            builder: (context, p, _) => CustomPaint(
-                              size: const Size.square(220),
-                              painter: _RingPainter(p, ringColors),
-                            ),
+                            builder: (context, p, _) =>
+                                CustomPaint(size: const Size.square(220), painter: _RingPainter(p, ringColors)),
                           ),
                           AnimatedContainer(
                             duration: const Duration(milliseconds: 400),
@@ -157,22 +154,15 @@ class DashboardScreen extends StatelessWidget {
                         ],
                       ),
                     ),
-                    if (limit != null) ...[
-                      const SizedBox(height: 12),
-                      _LimitPill(left: limit - today.total),
-                    ],
+                    if (limit != null) ...[const SizedBox(height: 12), _LimitPill(left: limit - today.total)],
                     const SizedBox(height: 18),
-                    _StatsStrip(
-                      seconds: today.totalSeconds,
-                      total: today.total,
-                      yesterday: counts.yesterday?.total,
-                    ),
+                    _StatsStrip(seconds: today.totalSeconds, total: today.total, yesterday: counts.yesterday?.total),
                   ],
                 ),
               ),
               const SizedBox(height: 20),
               CustomText(
-                text: '${state.label} brain. A visualization, not a diagnosis.',
+                text: 'Your buddy is ${state.label.toLowerCase()}. A visualization, not a diagnosis.',
                 fontSize: 11,
                 textAlign: TextAlign.center,
                 color: AppColors.textMuted.withValues(alpha: 0.8),
@@ -275,7 +265,6 @@ class _RingPainter extends CustomPainter {
         ..strokeWidth = stroke
         ..shader = shader,
     );
-    // Round ends drawn separately so each cap keeps its own gradient color.
     Offset at(double a) => center + Offset(cos(a), sin(a)) * radius;
     canvas.drawCircle(at(-pi / 2), stroke / 2, Paint()..color = colors.first);
     canvas.drawCircle(at(-pi / 2 + sweep), stroke / 2, Paint()..color = colors.last);
@@ -285,7 +274,6 @@ class _RingPainter extends CustomPainter {
   bool shouldRepaint(_RingPainter old) => old.progress != progress || old.colors != colors || old.dark != dark;
 }
 
-/// Dashboard hero card: surface with a soft tint of the ring color at the top.
 class _HeroCard extends StatelessWidget {
   const _HeroCard({required this.glow, required this.child});
 
@@ -368,7 +356,6 @@ class _LimitPill extends StatelessWidget {
   }
 }
 
-/// Watch time and change vs yesterday.
 class _StatsStrip extends StatelessWidget {
   const _StatsStrip({required this.seconds, required this.total, required this.yesterday});
 
@@ -380,12 +367,7 @@ class _StatsStrip extends StatelessWidget {
   Widget build(BuildContext context) {
     final diff = yesterday == null ? null : total - yesterday!;
     final cells = <Widget>[
-      _Stat(
-        icon: Icons.schedule_rounded,
-        color: AppColors.lavender,
-        value: watchTime(seconds),
-        label: 'in reels',
-      ),
+      _Stat(icon: Icons.schedule_rounded, color: AppColors.lavender, value: watchTime(seconds), label: 'in reels'),
       if (diff != null)
         _Stat(
           icon: diff > 0
@@ -398,7 +380,11 @@ class _StatsStrip extends StatelessWidget {
               : diff < 0
               ? AppColors.sage
               : AppColors.textMuted,
-          value: diff > 0 ? '+$diff' : diff < 0 ? '−${-diff}' : 'Same',
+          value: diff > 0
+              ? '+$diff'
+              : diff < 0
+              ? '−${-diff}'
+              : 'Same',
           label: 'vs yesterday',
         ),
     ];

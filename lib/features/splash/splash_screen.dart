@@ -20,7 +20,6 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
-  // preserve: otherwise Flutter cuts the duration to 5% when the phone has animations off.
   late final AnimationController _c = AnimationController(
     vsync: this,
     duration: SplashScreen.duration,
@@ -60,7 +59,6 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   }
 
   Future<void> _done() async {
-    // Opened by the service at a reel limit: go straight to the block screen.
     final block = await Get.find<CountsController>().bridge.takeBlockRequest();
     if (!mounted) return;
     final onboarded = Get.find<SettingsController>().settings.value.onboardingDone;
@@ -155,7 +153,6 @@ const _particleColors = [AppColors.lavender, AppColors.lilac, AppColors.sage, Ap
 
 enum _Shape { dot, star, square }
 
-/// One piece of confetti thrown out from the logo when it lands.
 class _BurstParticle {
   const _BurstParticle(this.dir, this.distance, this.size, this.color, this.delay, this.shape, this.spin);
 
@@ -187,7 +184,6 @@ class _BurstParticle {
   }
 }
 
-/// Confetti flies out, spins, falls a little, then shrinks and fades.
 class _BurstPainter extends CustomPainter {
   _BurstPainter(this.t, this.particles);
 
@@ -230,7 +226,6 @@ class _BurstPainter extends CustomPainter {
     }
   }
 
-  /// Four-point sparkle centred on the origin.
   static Path _sparkle(double r) {
     final i = r * 0.3;
     return Path()
@@ -246,7 +241,6 @@ class _BurstPainter extends CustomPainter {
   bool shouldRepaint(_BurstPainter old) => old.t != t;
 }
 
-/// Soft dot drifting upward in the background.
 class _FloatParticle {
   const _FloatParticle(this.x, this.y, this.rise, this.sway, this.phase, this.radius, this.color);
 
@@ -275,7 +269,6 @@ class _FloatParticle {
   }
 }
 
-/// Background dots: fade in, then rise, sway and twinkle.
 class _FloatPainter extends CustomPainter {
   _FloatPainter(this.anim, this.particles) : super(repaint: anim);
 
@@ -302,7 +295,6 @@ class _FloatPainter extends CustomPainter {
   bool shouldRepaint(_FloatPainter old) => false;
 }
 
-/// Three short yellow strokes that grow outward one after another.
 class _SparksPainter extends CustomPainter {
   _SparksPainter(this.progress);
 
@@ -322,7 +314,6 @@ class _SparksPainter extends CustomPainter {
       ..strokeWidth = 4
       ..strokeCap = StrokeCap.round;
     for (final (i, (a, b)) in _lines.indexed) {
-      // Stagger: each line starts a third later than the previous one.
       final p = ((progress - i * 0.2) / 0.6).clamp(0.0, 1.0);
       if (p > 0) canvas.drawLine(a, Offset.lerp(a, b, p)!, paint);
     }

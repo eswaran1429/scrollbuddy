@@ -4,7 +4,6 @@ import 'package:scrollbuddy/core/custom_widgets/page_header/page_header.dart';
 import 'package:scrollbuddy/core/themes/app_colors.dart';
 import 'package:scrollbuddy/core/themes/app_tokens.dart';
 
-/// List row used inside [AppTileGroup].
 class AppTile extends StatelessWidget {
   const AppTile({
     super.key,
@@ -57,7 +56,6 @@ class AppTile extends StatelessWidget {
   }
 }
 
-/// White rounded group of [AppTile]s with an optional label above.
 class AppTileGroup extends StatelessWidget {
   const AppTileGroup({super.key, required this.children, this.title});
 
@@ -92,7 +90,6 @@ class AppTileGroup extends StatelessWidget {
   }
 }
 
-/// Soft tinted rounded square with an icon.
 class IconBadge extends StatelessWidget {
   const IconBadge({super.key, required this.icon, required this.color, this.size = 36});
 
@@ -111,7 +108,6 @@ class IconBadge extends StatelessWidget {
   }
 }
 
-/// Label on the left, value on the right. Used in key/value cards.
 class InfoRow extends StatelessWidget {
   const InfoRow({super.key, required this.label, required this.value, this.valueColor});
 

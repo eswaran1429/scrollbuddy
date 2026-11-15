@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:scrollbuddy/core/themes/app_colors.dart';
 import 'package:scrollbuddy/core/themes/app_tokens.dart';
 
-/// Rounded card. White with a soft shadow by default; a tinted [color]
-/// drops the shadow. Tappable when [onTap] is set.
 class AppCard extends StatelessWidget {
   const AppCard({
     super.key,

@@ -12,9 +12,9 @@ import 'package:scrollbuddy/core/themes/app_colors.dart';
 import '../../core/models.dart';
 import '../../data/counts_controller.dart';
 import '../../data/settings.dart';
-import '../dashboard/brain_view.dart';
+import '../../core/brain_state.dart';
+import '../dashboard/mascot_view.dart';
 
-/// Disclosure copy from plan.md §11. Keep in sync with docs/PLAY_COMPLIANCE.md.
 const disclosureText =
     'ScrollBuddy uses Android\'s Accessibility Service to detect when you scroll between reels or '
     'shorts in the apps you select (Instagram, YouTube, Facebook, Snapchat). This is used only to '
@@ -31,7 +31,6 @@ const _bullets = [
   (false, 'Does not record your screen'),
 ];
 
-/// Steps: 0 intro, 1 disclosure, 2 apps, 3 accessibility, 4 notifications.
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key, this.startPage = 0});
 
@@ -42,7 +41,7 @@ class OnboardingScreen extends StatefulWidget {
 }
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
-  static const _pageCount = 5;
+  static const _pageCount = 4;
   late final _controller = PageController(initialPage: widget.startPage);
   late int _page = widget.startPage;
   bool _declined = false;
@@ -111,8 +110,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       ? _DeclinedPage(onBack: () => setState(() => _declined = false), onSkip: _finish)
                       : _DisclosurePage(onAgree: _next, onDecline: () => setState(() => _declined = true)),
                   _AppsPage(onNext: _next),
-                  _AccessibilityPage(onNext: _next),
-                  _NotificationsPage(onFinish: _finish),
+                  _AccessibilityPage(onNext: _finish),
                 ],
               ),
             ),
@@ -123,13 +121,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 }
 
-/// Page layout: content centered vertically (scrolls if tall), actions pinned at bottom.
 class _Page extends StatelessWidget {
   const _Page({required this.title, required this.content, required this.actions, this.top, this.accent});
 
   final String title;
 
-  /// Second title line in amber.
   final String? accent;
   final Widget? top;
   final List<Widget> content;
@@ -238,7 +234,7 @@ class _IntroPage extends StatelessWidget {
               alignment: Alignment.center,
               children: [
                 SoftBlob(size: 210, color: AppColors.sageSoft),
-                const BrainView(count: 0, reducedMotion: true, size: 170, showLabel: false),
+                const MascotView(state: BrainState.healthy, reducedMotion: true, size: 170),
                 for (final (i, app) in apps.indexed)
                   Align(
                     alignment: spots[i],
@@ -261,7 +257,7 @@ class _IntroPage extends StatelessWidget {
       accent: 'counted.',
       content: const [
         _Muted(
-          'ScrollBuddy counts the reels and shorts you watch, live, all day. Watch your brain buddy '
+          'ScrollBuddy counts the reels and shorts you watch, live, all day. Watch your buddy '
           'change as the number climbs, and set a limit that works for you.',
         ),
       ],
@@ -556,57 +552,6 @@ class _AccessibilityPage extends StatelessWidget {
         ],
       );
     });
-  }
-}
-
-class _NotificationsPage extends StatelessWidget {
-  const _NotificationsPage({required this.onFinish});
-
-  final VoidCallback onFinish;
-
-  @override
-  Widget build(BuildContext context) {
-    return _Page(
-      top: const _IconTile(Icons.notifications_active_outlined),
-      title: 'Your count,',
-      accent: 'always in view',
-      content: [
-        const _Muted('ScrollBuddy keeps a quiet notification with your live count. Android needs your permission.'),
-        const SizedBox(height: 24),
-        AppCard(
-          radius: 22,
-          padding: const EdgeInsets.all(14),
-          child: Row(
-            children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(color: AppColors.sage, borderRadius: BorderRadius.circular(10)),
-                child: const Icon(Icons.psychology, color: Colors.white, size: 22),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    CustomText(text: 'ScrollBuddy · now', fontSize: 12, color: AppColors.textMuted),
-                    CustomText(text: '42 reels today', fontWeight: FontWeight.w700),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-      actions: [
-        AppButton(
-          // TODO(phase-5): request POST_NOTIFICATIONS via permission_handler.
-          label: 'Allow notifications',
-          onPressed: onFinish,
-        ),
-        AppButton.text(label: 'Not now', onPressed: onFinish),
-      ],
-    );
   }
 }
 

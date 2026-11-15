@@ -91,7 +91,6 @@ class AppColors {
 
   static final Color snackBackGroundColor = Colors.black.withValues(alpha: 0.1);
 
-  /// Set by the app root before each build. Theme-aware colors below read it.
   static bool isDark = false;
 
   static Color get bg => isDark ? const Color(0xFF13111C) : const Color(0xFFF7F8FA);
@@ -101,7 +100,6 @@ class AppColors {
   static Color get textPrimary => isDark ? const Color(0xFFF1EFF8) : const Color(0xFF191C1E);
   static Color get textMuted => isDark ? const Color(0xFF9A96AE) : const Color(0xFF6B7280);
 
-  /// Text on a [textPrimary] background (tooltips, snackbars).
   static Color get onInverse => isDark ? const Color(0xFF13111C) : Colors.white;
 
   static const Color sage = Color(0xFF4F8F77);
