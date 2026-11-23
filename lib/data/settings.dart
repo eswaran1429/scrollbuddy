@@ -26,6 +26,7 @@ class AppSettings {
     this.onboardingDone = false,
     this.showOverlay = true,
     this.overlayAfter = 0,
+    this.moodIcon = true,
     this.themeMode = ThemeMode.system,
   });
 
@@ -40,6 +41,8 @@ class AppSettings {
 
   final int overlayAfter;
 
+  final bool moodIcon;
+
   final ThemeMode themeMode;
 
   bool strictActive(DateTime now) => strictUntil != null && now.isBefore(strictUntil!);
@@ -53,6 +56,7 @@ class AppSettings {
     bool? onboardingDone,
     bool? showOverlay,
     int? overlayAfter,
+    bool? moodIcon,
     ThemeMode? themeMode,
   }) => AppSettings(
     dailyLimit: dailyLimit != null ? dailyLimit() : this.dailyLimit,
@@ -63,6 +67,7 @@ class AppSettings {
     onboardingDone: onboardingDone ?? this.onboardingDone,
     showOverlay: showOverlay ?? this.showOverlay,
     overlayAfter: overlayAfter ?? this.overlayAfter,
+    moodIcon: moodIcon ?? this.moodIcon,
     themeMode: themeMode ?? this.themeMode,
   );
 
@@ -75,6 +80,7 @@ class AppSettings {
     'onboardingDone': onboardingDone,
     'showOverlay': showOverlay,
     'overlayAfter': overlayAfter,
+    'moodIcon': moodIcon,
     'themeMode': themeMode.name,
   };
 
@@ -91,6 +97,7 @@ class AppSettings {
       onboardingDone: j['onboardingDone'] as bool? ?? false,
       showOverlay: j['showOverlay'] as bool? ?? true,
       overlayAfter: j['overlayAfter'] as int? ?? 0,
+      moodIcon: j['moodIcon'] as bool? ?? true,
       themeMode: ThemeMode.values.asNameMap()[j['themeMode']] ?? ThemeMode.system,
     );
   }
@@ -128,6 +135,8 @@ class SettingsController extends GetxController {
   void setShowOverlay(bool on) => _s = _s.copyWith(showOverlay: on);
 
   void setOverlayAfter(int reels) => _s = _s.copyWith(overlayAfter: reels);
+
+  void setMoodIcon(bool on) => _s = _s.copyWith(moodIcon: on);
 
   void setThemeMode(ThemeMode mode) => _s = _s.copyWith(themeMode: mode);
 

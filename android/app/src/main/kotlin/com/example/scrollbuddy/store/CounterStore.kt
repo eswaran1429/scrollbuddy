@@ -22,6 +22,7 @@ class CounterStore private constructor(context: Context) :
         val showOverlay: Boolean,
         val overlayAfter: Int = 0,
         val limits: Limits = Limits(),
+        val moodIcon: Boolean = true,
     )
 
     @Volatile
@@ -175,6 +176,8 @@ class CounterStore private constructor(context: Context) :
 
     fun showOverlay(): Boolean = serviceSettings().showOverlay
 
+    fun moodIcon(): Boolean = serviceSettings().moodIcon
+
     fun overlayAfter(): Int = serviceSettings().overlayAfter
 
     fun limits(): Limits = serviceSettings().limits
@@ -210,7 +213,7 @@ class CounterStore private constructor(context: Context) :
         val limits = Limits(
             dailyLimit = if (obj.isNull("dailyLimit")) null else obj.optInt("dailyLimit"),
         )
-        return ServiceSettings(tracked, obj.optBoolean("showOverlay", true), obj.optInt("overlayAfter", 0), limits)
+        return ServiceSettings(tracked, obj.optBoolean("showOverlay", true), obj.optInt("overlayAfter", 0), limits, obj.optBoolean("moodIcon", true))
     }
 
     private fun notifyListeners() {

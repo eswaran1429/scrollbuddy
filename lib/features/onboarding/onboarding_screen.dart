@@ -361,7 +361,6 @@ class _AppsPage extends StatelessWidget {
         content: [
           const _Muted('Pick at least one. You can change this any time.'),
           const SizedBox(height: 24),
-          // TODO(phase-5): show only installed apps.
           GridView.count(
             crossAxisCount: 2,
             shrinkWrap: true,

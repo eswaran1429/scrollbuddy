@@ -129,6 +129,12 @@ class SettingsScreen extends StatelessWidget {
                     if (s.showOverlay) _OverlayAfterPicker(value: s.overlayAfter, onChanged: n.setOverlayAfter),
                   ],
                 ),
+                AppTile(
+                  leading: const IconBadge(icon: Icons.pets_outlined, color: AppColors.lavender),
+                  title: 'Mood app icon',
+                  subtitle: 'App icon shows the cat in today\'s mood. Updates when you leave the app',
+                  trailing: Switch(value: s.moodIcon, onChanged: n.setMoodIcon),
+                ),
               ],
             ),
             const SizedBox(height: 22),

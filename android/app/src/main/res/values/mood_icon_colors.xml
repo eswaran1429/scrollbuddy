@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="ic_mood_tired_bg">#FFFFFF</color>
+    <color name="ic_mood_cracking_bg">#FFFFFF</color>
+    <color name="ic_mood_fried_bg">#FFFFFF</color>
+    <color name="ic_launcher_bg">#FFFFFF</color>
+</resources>

@@ -20,6 +20,7 @@ import com.example.scrollbuddy.detect.Selectors
 import com.example.scrollbuddy.detect.WatchTimer
 import com.example.scrollbuddy.overlay.CountBubble
 import com.example.scrollbuddy.store.CounterStore
+import com.example.scrollbuddy.store.LauncherIcon
 
 class ReelAccessibilityService : AccessibilityService() {
     private lateinit var store: CounterStore
@@ -78,6 +79,7 @@ class ReelAccessibilityService : AccessibilityService() {
         } else {
             detectors.values.forEach { it.leftViewer() }
             saveTime(timer.stop(now))
+            LauncherIcon.sync(this)
             watching = false
             main.removeCallbacks(viewerWatch)
         }
@@ -93,6 +95,7 @@ class ReelAccessibilityService : AccessibilityService() {
         store = CounterStore.get(this)
         debugLog = (applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
         bubble = CountBubble(this, store)
+        LauncherIcon.sync(this)
     }
 
     override fun onUnbind(intent: android.content.Intent?): Boolean {
@@ -189,6 +192,7 @@ class ReelAccessibilityService : AccessibilityService() {
                 return@postDelayed
             }
             store.increment(appKey)
+            LauncherIcon.sync(this)
             updateBubble()
             bubble.update(store.todayTotal())
             maybeBlock(appKey, SystemClock.uptimeMillis())

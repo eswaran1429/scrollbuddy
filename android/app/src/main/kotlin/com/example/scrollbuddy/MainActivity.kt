@@ -3,6 +3,7 @@ package com.example.scrollbuddy
 import android.content.Intent
 import android.os.Bundle
 import com.example.scrollbuddy.bridge.Bridge
+import com.example.scrollbuddy.store.LauncherIcon
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 
@@ -17,6 +18,11 @@ class MainActivity : FlutterActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         takeBlockExtra(intent)
+    }
+
+    override fun onStop() {
+        super.onStop()
+        LauncherIcon.sync(this)
     }
 
     override fun onNewIntent(intent: Intent) {
