@@ -101,40 +101,12 @@ class _HistoryBody extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: _StatTile(
-                  label: 'Best day',
-                  value: best == null ? '–' : '${best.total}',
-                  caption: best == null ? 'no data yet' : shortDate(best.date),
-                  icon: Icons.emoji_events_outlined,
-                  color: AppColors.lavender,
+                  label: 'Streak',
+                  value: limit == null ? '–' : '${stats.streak} days',
+                  caption: limit == null ? 'set a limit to start' : 'under $limit',
+                  icon: Icons.local_fire_department_outlined,
+                  color: AppColors.coral,
                 ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 10),
-        AppCard(
-          padding: const EdgeInsets.all(14),
-          child: Row(
-            children: [
-              const IconBadge(icon: Icons.local_fire_department_outlined, color: AppColors.coral, size: 40),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SectionLabel('Streak'),
-                    CustomText(
-                      text: limit == null ? 'Set a limit to start' : '${stats.streak} days',
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ],
-                ),
-              ),
-              StatusPill(
-                text: limit == null ? 'No limit' : 'Under $limit',
-                color: limit == null ? AppColors.textMuted : AppColors.coral,
-                background: limit == null ? AppColors.surfaceHigh : AppColors.peachSoft,
               ),
             ],
           ),
@@ -156,9 +128,20 @@ class _HistoryBody extends StatelessWidget {
                   ],
                 ],
               ),
+              if (best != null) ...[
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    const Icon(Icons.emoji_events, size: 16, color: AppColors.amber),
+                    const SizedBox(width: 6),
+                    CustomText(text: 'Best day · ${shortDate(best.date)} · ', fontSize: 12, color: AppColors.textMuted),
+                    CustomText(text: '${best.total} reels', fontSize: 12, fontWeight: FontWeight.w700),
+                  ],
+                ),
+              ],
               const SizedBox(height: 16),
               if (days.length <= 7)
-                DayBars(key: const ValueKey('bars'), days: days, limit: limit)
+                DayBars(key: const ValueKey('bars'), days: days, limit: limit, best: best?.date)
               else
                 DayHeatmap(key: const ValueKey('heatmap'), days: days, limit: limit),
             ],
@@ -166,35 +149,102 @@ class _HistoryBody extends StatelessWidget {
         ),
         const SizedBox(height: 10),
         AppCard(
-          padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SectionLabel('Summary'),
-              const SizedBox(height: 6),
-              InfoRow(label: 'Total reels', value: '$total'),
-              InfoRow(label: 'Time in reels', value: watchTime(totalSeconds)),
-              InfoRow(label: 'Time per day', value: watchTime(totalSeconds ~/ days.length)),
-              InfoRow(label: 'Days tracked', value: '${days.length}'),
-              InfoRow(label: 'Today', value: '${today.total}'),
-              if (limit != null) InfoRow(label: 'Daily limit', value: '$limit'),
+              const SectionLabel('Breakdown'),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(
+                    child: _Total(value: '$total', label: 'reels'),
+                  ),
+                  Expanded(
+                    child: _Total(value: watchTime(totalSeconds), label: 'in reels'),
+                  ),
+                  Expanded(
+                    child: _Total(value: watchTime(totalSeconds ~/ days.length), label: 'per day'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              for (final (app, n, secs) in perApp) _AppShare(app: app, reels: n, seconds: secs, total: total),
             ],
           ),
         ),
-        const SizedBox(height: 22),
-        AppTileGroup(
-          title: 'By app',
-          children: [
-            for (final (app, n, secs) in perApp)
-              AppTile(
-                leading: IconBadge(icon: app.icon, color: app.color, size: 38),
-                title: app.label,
-                subtitle: '${total == 0 ? 0 : (n * 100 / total).round()}% of reels · ${watchTime(secs)}',
-                trailing: CustomText(text: '$n', fontWeight: FontWeight.w700, fontSize: 14),
-              ),
-          ],
-        ),
       ],
+    );
+  }
+}
+
+class _Total extends StatelessWidget {
+  const _Total({required this.value, required this.label});
+
+  final String value;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        CustomText(text: value, fontSize: 18, fontWeight: FontWeight.w800, maxLines: 1),
+        CustomText(text: label, fontSize: 11, color: AppColors.textMuted),
+      ],
+    );
+  }
+}
+
+/// One app: icon, name, share bar, reels and time.
+class _AppShare extends StatelessWidget {
+  const _AppShare({required this.app, required this.reels, required this.seconds, required this.total});
+
+  final TrackedApp app;
+  final int reels;
+  final int seconds;
+  final int total;
+
+  @override
+  Widget build(BuildContext context) {
+    final share = total == 0 ? 0.0 : reels / total;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        children: [
+          IconBadge(icon: app.icon, color: app.color, size: 34),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    CustomText(text: app.label, fontSize: 13, fontWeight: FontWeight.w600),
+                    const Spacer(),
+                    CustomText(text: '$reels', fontSize: 13, fontWeight: FontWeight.w700),
+                  ],
+                ),
+                const SizedBox(height: 5),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: share,
+                    minHeight: 6,
+                    color: app.color,
+                    backgroundColor: AppColors.surfaceHigh,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                CustomText(
+                  text: '${(share * 100).round()}% · ${watchTime(seconds)}',
+                  fontSize: 11,
+                  color: AppColors.textMuted,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

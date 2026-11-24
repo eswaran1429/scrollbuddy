@@ -16,6 +16,7 @@ import '../../core/format.dart';
 import '../../data/counts_controller.dart';
 import '../../data/settings.dart';
 import '../dashboard/mascot_view.dart';
+import 'unlock_games.dart';
 
 class BlockScreen extends StatefulWidget {
   const BlockScreen({super.key, this.preview = false});
@@ -40,7 +41,7 @@ class _BlockScreenState extends State<BlockScreen> {
   late int _secondsLeft;
   final _phrase = TextEditingController();
 
-  final _line = _lines[Random().nextInt(_lines.length)];
+  final _line = (MascotView.isBedtime ? _bedtimeLines : _lines)[Random().nextInt(5)];
 
   int _remaining() =>
       (BlockScreen.waitSeconds - DateTime.now().difference(_waitStart).inSeconds).clamp(0, BlockScreen.waitSeconds);
@@ -127,6 +128,12 @@ class _BlockScreenState extends State<BlockScreen> {
                             state: brainStateFor(count, limit: s.dailyLimit),
                             reducedMotion: s.reducedMotion,
                             size: 160,
+                            // Reels are done for the day: the cat goes to sleep.
+                            forceAsset: MascotView.isBedtime
+                                ? MascotView.bedtime
+                                : mode == UnlockMode.none || mode == UnlockMode.strict
+                                ? MascotView.sleeping
+                                : null,
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -207,6 +214,15 @@ class _BlockScreenState extends State<BlockScreen> {
           const SizedBox(height: 16),
           AppButton(label: 'Unlock $reels more reels', onPressed: _secondsLeft == 0 ? () => _unlock(reels) : null),
         ];
+      case UnlockMode.game:
+        return [
+          UnlockGame(
+            onWin: () {
+              if (!widget.preview) UnlockGames.markPlayed();
+              _unlock(reels);
+            },
+          ),
+        ];
       case UnlockMode.task:
         final ok = _phrase.text.trim().toLowerCase() == BlockScreen.unlockPhrase.toLowerCase();
         return [
@@ -233,4 +249,13 @@ const _lines = [
   ('You finished the internet.', "Nothing left but cats and recipes you won't make. Real life is open."),
   ("Reel talk: that's enough.", 'Stopping now is the plot twist nobody saw coming.'),
   ('Your buddy needs a nap.', 'Ten minutes off-screen and it will forgive you. Probably.'),
+];
+
+/// Late-night versions (11 pm to 6 am).
+const _bedtimeLines = [
+  ('Go to sleep, human.', 'The reels will still be there tomorrow. Your sleep will not.'),
+  ('Past bedtime.', 'Your buddy is already in pyjamas. Join them.'),
+  ('Lights out.', 'Nothing good has ever been found in a reel at this hour.'),
+  ('Night shift is over.', 'Put the phone down, close your eyes. Future you will be fresh.'),
+  ('Shhh... cat is sleeping.', "Don't wake it with one more reel. Goodnight."),
 ];

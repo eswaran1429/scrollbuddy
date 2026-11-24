@@ -8,6 +8,7 @@ enum UnlockMode {
   none('No unlock', 'Reels stay blocked until midnight'),
   task('Task', 'Type a short phrase to unlock'),
   wait('Wait', 'Wait 30 seconds, then unlock'),
+  game('Mini-game', 'Calm the cat or pop bubbles to unlock'),
   strict('Strict', 'No unlock until the strict timer ends');
 
   const UnlockMode(this.label, this.description);
@@ -27,6 +28,9 @@ class AppSettings {
     this.showOverlay = true,
     this.overlayAfter = 0,
     this.moodIcon = true,
+    this.unlockedRewards = const {},
+    this.outfit,
+    this.dressingRoomSeen = false,
     this.themeMode = ThemeMode.system,
   });
 
@@ -43,6 +47,15 @@ class AppSettings {
 
   final bool moodIcon;
 
+  /// Reward names unlocked so far. Kept even when old good days drop out of history.
+  final Set<String> unlockedRewards;
+
+  /// Reward the cat wears while healthy, or null.
+  final String? outfit;
+
+  /// The outfits button pulses until the dressing room has been opened once.
+  final bool dressingRoomSeen;
+
   final ThemeMode themeMode;
 
   bool strictActive(DateTime now) => strictUntil != null && now.isBefore(strictUntil!);
@@ -57,6 +70,9 @@ class AppSettings {
     bool? showOverlay,
     int? overlayAfter,
     bool? moodIcon,
+    Set<String>? unlockedRewards,
+    String? Function()? outfit,
+    bool? dressingRoomSeen,
     ThemeMode? themeMode,
   }) => AppSettings(
     dailyLimit: dailyLimit != null ? dailyLimit() : this.dailyLimit,
@@ -68,6 +84,9 @@ class AppSettings {
     showOverlay: showOverlay ?? this.showOverlay,
     overlayAfter: overlayAfter ?? this.overlayAfter,
     moodIcon: moodIcon ?? this.moodIcon,
+    unlockedRewards: unlockedRewards ?? this.unlockedRewards,
+    outfit: outfit != null ? outfit() : this.outfit,
+    dressingRoomSeen: dressingRoomSeen ?? this.dressingRoomSeen,
     themeMode: themeMode ?? this.themeMode,
   );
 
@@ -81,6 +100,9 @@ class AppSettings {
     'showOverlay': showOverlay,
     'overlayAfter': overlayAfter,
     'moodIcon': moodIcon,
+    'unlockedRewards': unlockedRewards.toList(),
+    'outfit': outfit,
+    'dressingRoomSeen': dressingRoomSeen,
     'themeMode': themeMode.name,
   };
 
@@ -98,6 +120,9 @@ class AppSettings {
       showOverlay: j['showOverlay'] as bool? ?? true,
       overlayAfter: j['overlayAfter'] as int? ?? 0,
       moodIcon: j['moodIcon'] as bool? ?? true,
+      unlockedRewards: {...?(j['unlockedRewards'] as List?)?.cast<String>()},
+      outfit: j['outfit'] as String?,
+      dressingRoomSeen: j['dressingRoomSeen'] as bool? ?? false,
       themeMode: ThemeMode.values.asNameMap()[j['themeMode']] ?? ThemeMode.system,
     );
   }
@@ -138,7 +163,25 @@ class SettingsController extends GetxController {
 
   void setMoodIcon(bool on) => _s = _s.copyWith(moodIcon: on);
 
+  /// Adds newly earned rewards; returns the ones that were new.
+  Set<String> unlockRewards(Iterable<String> names) {
+    final fresh = names.toSet().difference(_s.unlockedRewards);
+    if (fresh.isNotEmpty) _s = _s.copyWith(unlockedRewards: {..._s.unlockedRewards, ...fresh});
+    return fresh;
+  }
+
+  void wearOutfit(String? name) => _s = _s.copyWith(outfit: () => name);
+
+  void markDressingRoomSeen() {
+    if (!_s.dressingRoomSeen) _s = _s.copyWith(dressingRoomSeen: true);
+  }
+
   void setThemeMode(ThemeMode mode) => _s = _s.copyWith(themeMode: mode);
 
-  void reset() => _s = AppSettings(onboardingDone: true, themeMode: _s.themeMode);
+  void reset() => _s = AppSettings(
+    onboardingDone: true,
+    themeMode: _s.themeMode,
+    unlockedRewards: _s.unlockedRewards,
+    outfit: _s.outfit,
+  );
 }

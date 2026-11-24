@@ -19,18 +19,13 @@ class _DayCaption extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final state = brainStateFor(day.total, limit: limit);
-    final color = stateColors(state).first;
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 200),
       child: Row(
         key: ValueKey(day.date),
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Container(
-            width: 8,
-            height: 8,
-            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-          ),
+          MoodFace(state: state, size: 26),
           const SizedBox(width: 8),
           CustomText(text: '${isToday ? 'Today' : shortDate(day.date)} · ', fontSize: 12, color: AppColors.textMuted),
           CustomText(text: '${day.total} reels', fontSize: 12, fontWeight: FontWeight.w700),
@@ -42,10 +37,13 @@ class _DayCaption extends StatelessWidget {
 }
 
 class DayBars extends StatefulWidget {
-  const DayBars({super.key, required this.days, required this.limit});
+  const DayBars({super.key, required this.days, required this.limit, this.best});
 
   final List<DayCounts> days;
   final int? limit;
+
+  /// Day to mark with a trophy (fewest reels).
+  final DateTime? best;
 
   @override
   State<DayBars> createState() => _DayBarsState();
@@ -95,6 +93,7 @@ class _DayBarsState extends State<DayBars> {
                           value: d.total,
                           selected: i == _selected,
                           isToday: i == days.length - 1,
+                          best: widget.best != null && d.date == widget.best,
                           thin: thin,
                           onTap: () => setState(() => _selected = i),
                         ),
@@ -106,6 +105,30 @@ class _DayBarsState extends State<DayBars> {
           ),
         ),
         const SizedBox(height: 8),
+        if (!thin) ...[
+          Row(
+            children: [
+              for (final (i, d) in days.indexed)
+                Expanded(
+                  child: Center(
+                    child: GestureDetector(
+                      onTap: () => setState(() => _selected = i),
+                      child: AnimatedScale(
+                        scale: i == _selected ? 1.15 : 1,
+                        duration: const Duration(milliseconds: 150),
+                        child: MoodFace(
+                          state: brainStateFor(d.total, limit: limit),
+                          size: 34,
+                          dim: d.total == 0,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 6),
+        ],
         Row(
           children: [
             for (final (i, d) in days.indexed)
@@ -141,6 +164,7 @@ class _Bar extends StatelessWidget {
     required this.isToday,
     required this.thin,
     required this.onTap,
+    this.best = false,
   });
 
   final double height;
@@ -150,6 +174,7 @@ class _Bar extends StatelessWidget {
   final bool isToday;
   final bool thin;
   final VoidCallback onTap;
+  final bool best;
 
   @override
   Widget build(BuildContext context) {
@@ -162,14 +187,20 @@ class _Bar extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
-            AnimatedOpacity(
-              duration: const Duration(milliseconds: 150),
-              opacity: selected && !thin ? 1 : 0,
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: CustomText(text: '$value', fontSize: 11, fontWeight: FontWeight.w700, maxLines: 1),
+            if (best && !selected && !thin)
+              const Padding(
+                padding: EdgeInsets.only(bottom: 3),
+                child: Icon(Icons.emoji_events, size: 15, color: AppColors.amber),
+              )
+            else
+              AnimatedOpacity(
+                duration: const Duration(milliseconds: 150),
+                opacity: selected && !thin ? 1 : 0,
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: CustomText(text: '$value', fontSize: 11, fontWeight: FontWeight.w700, maxLines: 1),
+                ),
               ),
-            ),
             TweenAnimationBuilder<double>(
               tween: Tween(end: height),
               duration: const Duration(milliseconds: 600),
@@ -368,6 +399,30 @@ class _StateLegend extends StatelessWidget {
             ],
           ),
       ],
+    );
+  }
+}
+
+/// Small cat for a day's mood.
+class MoodFace extends StatelessWidget {
+  const MoodFace({super.key, required this.state, required this.size, this.dim = false});
+
+  final BrainState state;
+  final double size;
+  final bool dim;
+
+  @override
+  Widget build(BuildContext context) {
+    return Opacity(
+      opacity: dim ? 0.35 : 1,
+      child: Image.asset(
+        'assets/images/${state.name}.png',
+        width: size,
+        height: size,
+        cacheWidth: (size * 3).round(),
+        fit: BoxFit.contain,
+        semanticLabel: state.label,
+      ),
     );
   }
 }

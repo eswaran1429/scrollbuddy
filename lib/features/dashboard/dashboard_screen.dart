@@ -18,7 +18,11 @@ import '../../core/format.dart';
 import '../../core/models.dart';
 import '../../data/counts_controller.dart';
 import '../../data/settings.dart';
+import '../../core/rewards.dart';
+import 'dressing_room.dart';
+import 'fun_fact_card.dart';
 import 'mascot_view.dart';
+import 'report_card.dart';
 
 const _ringFullAt = 200;
 
@@ -28,7 +32,9 @@ String _greeting(DateTime now) => switch (now.hour) {
   _ => 'Good evening',
 };
 
-String _mood(int count, BrainState state) => count == 0
+String _mood(int count, BrainState state) => MascotView.isBedtime
+    ? "Past bedtime. Your buddy's asleep"
+    : count == 0
     ? 'A fresh start today'
     : switch (state) {
         BrainState.healthy => 'Your brain feels sharp',
@@ -55,6 +61,8 @@ class DashboardScreen extends StatelessWidget {
           final state = brainStateFor(today.total, limit: limit);
           final progress = min(today.total / (limit ?? _ringFullAt), 1.0);
           final ringColors = stateColors(state);
+          final good = goodDays(counts.past, limit);
+          _unlockEarned(context, settingsCtrl, good);
 
           return ListView(
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 120),
@@ -85,6 +93,9 @@ class DashboardScreen extends StatelessWidget {
               if (!counts.accessibilityEnabled.value) ...[const _TrackingOffCard(), const SizedBox(height: 14)],
               _HeroCard(
                 glow: ringColors.last,
+                stamp: GradeStamp.isEvening
+                    ? GradeStamp(reels: today.total, limit: limit, reducedMotion: settings.reducedMotion)
+                    : null,
                 child: Column(
                   children: [
                     SizedBox.square(
@@ -113,7 +124,24 @@ class DashboardScreen extends StatelessWidget {
                               ),
                             ),
                           ),
-                          MascotView(state: state, reducedMotion: settings.reducedMotion, size: 168),
+                          GestureDetector(
+                            onTap: () => showDressingRoom(context, goodDays: good, hasLimit: limit != null),
+                            child: MascotView(
+                              state: state,
+                              reducedMotion: settings.reducedMotion,
+                              size: 168,
+                              outfit: _healthyLook(today.total, limit, counts.yesterday?.total, settings.outfit),
+                            ),
+                          ),
+                          Positioned(
+                            right: 6,
+                            bottom: 6,
+                            child: OutfitBadge(
+                              worn: Reward.byName(settings.outfit),
+                              isNew: !settings.dressingRoomSeen,
+                              onTap: () => showDressingRoom(context, goodDays: good, hasLimit: limit != null),
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -160,6 +188,10 @@ class DashboardScreen extends StatelessWidget {
                   ],
                 ),
               ),
+              if (today.total > 0) ...[
+                const SizedBox(height: 12),
+                FunFactCard(reels: today.total, seconds: today.totalSeconds),
+              ],
               const SizedBox(height: 20),
               CustomText(
                 text: 'Your buddy is ${state.label.toLowerCase()}. A visualization, not a diagnosis.',
@@ -172,6 +204,35 @@ class DashboardScreen extends StatelessWidget {
         }),
       ),
     );
+  }
+
+  /// What the cat looks like while healthy: asleep late at night, cheering on a fresh start
+  /// after a good day, otherwise the chosen outfit (or the plain cat).
+  String? _healthyLook(int todayTotal, int? limit, int? yesterday, String? outfit) {
+    if (MascotView.isBedtime) return MascotView.bedtime;
+    if (todayTotal == 0 && limit != null && yesterday != null && yesterday > 0 && yesterday <= limit) {
+      return MascotView.happy;
+    }
+    return Reward.byName(outfit)?.asset;
+  }
+
+  /// Saves outfits earned so far and announces new ones (after this frame, not during build).
+  void _unlockEarned(BuildContext context, SettingsController ctrl, int good) {
+    final earned = earnedRewards(good).map((r) => r.name);
+    if (earned.every(ctrl.settings.value.unlockedRewards.contains)) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final fresh = ctrl.unlockRewards(earned);
+      if (fresh.isEmpty || !context.mounted) return;
+      final names = fresh.map((n) => Reward.byName(n)!.label).join(', ');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: CustomText(
+            text: 'New outfit unlocked: $names. Tap the cat to try it on.',
+            color: AppColors.onInverse,
+          ),
+        ),
+      );
+    });
   }
 
   void _showDebugSheet(BuildContext context, CountsController counts) {
@@ -275,10 +336,13 @@ class _RingPainter extends CustomPainter {
 }
 
 class _HeroCard extends StatelessWidget {
-  const _HeroCard({required this.glow, required this.child});
+  const _HeroCard({required this.glow, required this.child, this.stamp});
 
   final Color glow;
   final Widget child;
+
+  /// Evening grade, pinned to the card's top-right corner, clear of the ring.
+  final Widget? stamp;
 
   @override
   Widget build(BuildContext context) {
@@ -298,7 +362,13 @@ class _HeroCard extends StatelessWidget {
         ),
         boxShadow: AppColors.isDark ? null : AppShadows.sm,
       ),
-      child: child,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          child,
+          if (stamp != null) Positioned(top: -10, right: -4, child: stamp!),
+        ],
+      ),
     );
   }
 }

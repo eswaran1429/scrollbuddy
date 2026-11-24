@@ -15,37 +15,115 @@ import android.graphics.PixelFormat
 import android.graphics.RectF
 import android.graphics.Shader
 import android.graphics.Typeface
+import android.graphics.drawable.GradientDrawable
 import android.view.Gravity
 import android.view.View
 import android.view.WindowManager
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.annotation.SuppressLint
 import android.view.MotionEvent
+import android.widget.TextView
 import com.example.scrollbuddy.R
 import com.example.scrollbuddy.store.CounterStore
+import com.example.scrollbuddy.store.LauncherIcon
 import kotlin.math.abs
 
 class CountBubble(private val service: AccessibilityService, private val store: CounterStore) {
     private val wm = service.getSystemService(WindowManager::class.java)
     private var view: FlipCounterView? = null
+    private var params: WindowManager.LayoutParams? = null
+    private var bubble: TextView? = null
+    private val hideBubble = Runnable { removeBubble() }
 
     val isShown: Boolean get() = view != null
 
     fun show(count: Int) {
         if (view == null) attach()
+        view?.setMood(mood(count))
         view?.setCount(count, animate = false)
     }
 
     fun update(count: Int) {
-        view?.setCount(count, animate = true)
+        val v = view ?: return
+        val m = mood(count)
+        v.setMood(m)
+        v.setCount(count, animate = true)
+        // While still healthy the logo cat reacts now and then: an eye-roll or yawn every
+        // 10th reel, otherwise an occasional blink.
+        if (m == 0) {
+            when {
+                count > 0 && count % 10 == 0 -> v.makeFace(if (count % 20 == 0) Face.YAWN else Face.EYEROLL, 1600)
+                Math.random() < 0.3 -> v.makeFace(Face.BLINK, 260)
+            }
+        }
+        val limit = store.limits().dailyLimit?.plus(store.bonusToday())
+        val warn = limit != null && count >= limit - WARN_REELS && count < limit
+        v.setWarning(warn)
+        if (warn) v.shake()
+        Milestones.lineFor(count, limit)?.let(::say)
+    }
+
+    private fun mood(count: Int) = LauncherIcon.mood(count, store.limits().dailyLimit)
+
+    /** Short speech bubble above the counter (below it when there is no room), gone after a moment. */
+    private fun say(text: String) {
+        val v = view ?: return
+        val p = params ?: return
+        removeBubble()
+        val density = service.resources.displayMetrics.density
+        val tv = TextView(service).apply {
+            this.text = text
+            setTextColor(Color.rgb(255, 243, 224))
+            textSize = 13f
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            maxWidth = (240 * density).toInt()
+            setPadding((12 * density).toInt(), (8 * density).toInt(), (12 * density).toInt(), (8 * density).toInt())
+            background = GradientDrawable().apply {
+                cornerRadius = 14 * density
+                setColor(Color.rgb(58, 42, 92))
+                setStroke((2 * density).toInt(), Color.rgb(150, 110, 230))
+            }
+            alpha = 0f
+        }
+        tv.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED)
+        val gap = (6 * density).toInt()
+        val above = p.y - tv.measuredHeight - gap
+        val bp = WindowManager.LayoutParams(
+            WindowManager.LayoutParams.WRAP_CONTENT,
+            WindowManager.LayoutParams.WRAP_CONTENT,
+            WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
+                WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+            PixelFormat.TRANSLUCENT,
+        ).apply {
+            gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
+            x = p.x
+            y = if (above >= statusBarHeight()) above else p.y + v.height + gap
+        }
+        runCatching { wm.addView(tv, bp) }.onSuccess {
+            bubble = tv
+            tv.animate().alpha(1f).setDuration(180).start()
+            tv.postDelayed(hideBubble, BUBBLE_MS)
+        }
+    }
+
+    private fun removeBubble() {
+        bubble?.let {
+            it.removeCallbacks(hideBubble)
+            runCatching { wm.removeView(it) }
+        }
+        bubble = null
     }
 
     fun hide() {
+        removeBubble()
         view?.let {
             it.stopAnimation()
             runCatching { wm.removeView(it) }
         }
         view = null
+        params = null
     }
 
     private fun attach() {
@@ -73,6 +151,7 @@ class CountBubble(private val service: AccessibilityService, private val store: 
         }
         wm.addView(v, params)
         view = v
+        this.params = params
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -118,7 +197,14 @@ class CountBubble(private val service: AccessibilityService, private val store: 
         val id = res.getIdentifier("status_bar_height", "dimen", "android")
         return if (id > 0) res.getDimensionPixelSize(id) else (24 * res.displayMetrics.density).toInt()
     }
+
+    private companion object {
+        const val WARN_REELS = 10
+        const val BUBBLE_MS = 2600L
+    }
 }
+
+private enum class Face { BLINK, YAWN, EYEROLL }
 
 private class FlipCounterView(context: Context) : View(context) {
     private val density = context.resources.displayMetrics.density
@@ -134,8 +220,46 @@ private class FlipCounterView(context: Context) : View(context) {
     private val catOverlap = dp(13f)
     private val sparkRoom = dp(14f)
 
-    private val cat: Bitmap = BitmapFactory.decodeResource(context.resources, R.drawable.overlay_logo)
+    // Logo while healthy, then the cat for today's mood. All are square, so the layout never changes.
+    private val cats: List<Bitmap> = listOf(
+        R.drawable.overlay_logo,
+        R.drawable.overlay_tired,
+        R.drawable.overlay_cracking,
+        R.drawable.overlay_fried,
+    ).map { BitmapFactory.decodeResource(context.resources, it) }
+    private var cat: Bitmap = cats[0]
     private val catH = catW * cat.height / cat.width
+
+    private val faces: Map<Face, Bitmap> = mapOf(
+        Face.BLINK to R.drawable.overlay_blink,
+        Face.YAWN to R.drawable.overlay_yawn,
+        Face.EYEROLL to R.drawable.overlay_eyeroll,
+    ).mapValues { BitmapFactory.decodeResource(context.resources, it.value) }
+
+    /** Picture for the current mood; a face may cover it for a moment. */
+    private var moodCat: Bitmap = cats[0]
+    private val endFace = Runnable {
+        cat = moodCat
+        invalidate()
+    }
+
+    fun setMood(mood: Int) {
+        val next = cats[mood.coerceIn(0, cats.lastIndex)]
+        if (next === moodCat) return
+        moodCat = next
+        removeCallbacks(endFace)
+        cat = next
+        invalidate()
+    }
+
+    /** Shows [face] for [ms] milliseconds, then goes back to the mood picture. */
+    fun makeFace(face: Face, ms: Long) {
+        if (moodCat !== cats[0]) return
+        removeCallbacks(endFace)
+        cat = faces.getValue(face)
+        invalidate()
+        postDelayed(endFace, ms)
+    }
 
     private var from = digitsOf(0)
     private var to = digitsOf(0)
@@ -166,6 +290,28 @@ private class FlipCounterView(context: Context) : View(context) {
         color = YELLOW
     }
     private val bitmapPaint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
+
+    private var warning = false
+
+    /** Amber frame in the last reels before the limit. */
+    fun setWarning(on: Boolean) {
+        if (on == warning) return
+        warning = on
+        frameStroke.color = if (on) AMBER else FRAME_EDGE
+        invalidate()
+    }
+
+    fun shake() {
+        animate().cancel()
+        translationX = 0f
+        val d = dp(6f)
+        val steps = floatArrayOf(-d, d, -d * 0.6f, d * 0.6f, -d * 0.3f, 0f)
+        fun step(i: Int) {
+            if (i >= steps.size) return
+            animate().translationX(steps[i]).setDuration(45).withEndAction { step(i + 1) }.start()
+        }
+        step(0)
+    }
 
     private val camera = Camera()
     private val matrix = Matrix()
@@ -200,6 +346,8 @@ private class FlipCounterView(context: Context) : View(context) {
     }
 
     fun stopAnimation() {
+        removeCallbacks(endFace)
+        cat = moodCat
         animator?.cancel()
         animator = null
         from = to
@@ -306,5 +454,6 @@ private class FlipCounterView(context: Context) : View(context) {
         val NOTCH = Color.rgb(120, 110, 150)
         val DIGIT = Color.rgb(255, 243, 224)
         val YELLOW = Color.rgb(245, 185, 33)
+        val AMBER = Color.rgb(245, 165, 36)
     }
 }

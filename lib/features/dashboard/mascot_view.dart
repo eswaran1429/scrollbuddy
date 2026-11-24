@@ -3,11 +3,34 @@ import 'package:flutter/material.dart';
 import '../../core/brain_state.dart';
 
 class MascotView extends StatefulWidget {
-  const MascotView({super.key, required this.state, required this.size, this.reducedMotion = false});
+  const MascotView({
+    super.key,
+    required this.state,
+    required this.size,
+    this.reducedMotion = false,
+    this.outfit,
+    this.forceAsset,
+  });
 
   final BrainState state;
   final double size;
   final bool reducedMotion;
+
+  /// Reward image worn while healthy.
+  final String? outfit;
+
+  /// Image shown whatever the mood (sleeping cat on the block screen).
+  final String? forceAsset;
+
+  static const happy = 'assets/images/happy.png';
+  static const sleeping = 'assets/images/sleeping.png';
+  static const bedtime = 'assets/images/bedtime.png';
+
+  /// 11 pm to 6 am.
+  static bool get isBedtime {
+    final h = DateTime.now().hour;
+    return h >= 23 || h < 6;
+  }
 
   static String asset(BrainState s) => switch (s) {
     BrainState.healthy => 'assets/images/healthy.png',
@@ -59,14 +82,18 @@ class _MascotViewState extends State<MascotView> with SingleTickerProviderStateM
     super.dispose();
   }
 
-  ImageProvider _provider(BrainState s) {
+  ImageProvider _provider(BrainState s) => _image(MascotView.asset(s));
+
+  ImageProvider _image(String asset) {
     final px = (widget.size * MediaQuery.devicePixelRatioOf(context)).round();
-    return ResizeImage(AssetImage(MascotView.asset(s)), width: px, allowUpscaling: false);
+    return ResizeImage(AssetImage(asset), width: px, allowUpscaling: false);
   }
 
   @override
   Widget build(BuildContext context) {
     final s = widget.state;
+    final asset =
+        widget.forceAsset ?? (s == BrainState.healthy && widget.outfit != null ? widget.outfit! : MascotView.asset(s));
     return Semantics(
       label: 'Mascot: ${s.label}. ${s.description}.',
       image: true,
@@ -81,8 +108,8 @@ class _MascotViewState extends State<MascotView> with SingleTickerProviderStateM
             child: ScaleTransition(scale: Tween(begin: 0.85, end: 1.0).animate(anim), child: child),
           ),
           child: Image(
-            key: ValueKey(s),
-            image: _provider(s),
+            key: ValueKey(asset),
+            image: _image(asset),
             width: widget.size,
             height: widget.size,
             fit: BoxFit.contain,

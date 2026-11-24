@@ -73,6 +73,15 @@ flutter:
     - assets/images/tired.png
     - assets/images/cracking.png
     - assets/images/fried.png
+    - assets/images/happy.png
+    - assets/images/sleeping.png
+    - assets/images/bedtime.png
+    - assets/images/reward_sunglasses.png
+    - assets/images/reward_bowtie.png
+    - assets/images/reward_scarf.png
+    - assets/images/reward_headphones.png
+    - assets/images/reward_crown.png
+    - assets/images/reward_partyhat.png
 
   # To add assets to your application, add an assets section, like this:
   # assets:
